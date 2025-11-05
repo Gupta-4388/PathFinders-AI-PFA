@@ -90,8 +90,8 @@ export default function Home() {
 }
 
 const FeatureCard = ({ icon, title, description }: { icon: React.ReactNode, title: string, description: string }) => (
-  <div className="p-8 bg-card rounded-lg shadow-sm border text-left transform transition-transform duration-300 hover:-translate-y-2 hover:shadow-accent/20 hover:shadow-lg">
-    <div className="mb-4">{icon}</div>
+  <div className="p-8 bg-card rounded-lg shadow-sm border text-left transform transition-transform duration-300 hover:scale-105 hover:shadow-lg hover:border-accent group">
+    <div className="mb-4 text-accent transition-colors duration-300 group-hover:text-primary">{icon}</div>
     <h3 className="text-xl font-bold mb-2">{title}</h3>
     <p className="text-muted-foreground">{description}</p>
   </div>
