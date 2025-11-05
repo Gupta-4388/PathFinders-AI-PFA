@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, ChangeEvent, useEffect } from 'react';
-import { Upload, FileText, Lightbulb, Loader2, X, BrainCircuit, Sparkles, Wand2, BarChart3, TrendingUp } from 'lucide-react';
+import { Upload, FileText, Lightbulb, Loader2, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -10,28 +10,6 @@ import { analyzeResume, AnalyzeResumeOutput } from '@/ai/flows/analyze-resume-fl
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Progress } from '@/components/ui/progress';
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  LabelList,
-} from 'recharts';
-
-type SkillCategory = {
-  category: string;
-  skills: AnalyzeResumeOutput['extractedSkills'];
-};
-
-const proficiencyColors: { [key: string]: string } = {
-  Beginner: 'bg-blue-200 text-blue-800',
-  Intermediate: 'bg-green-200 text-green-800',
-  Advanced: 'bg-yellow-200 text-yellow-800',
-  Expert: 'bg-purple-200 text-purple-800',
-};
 
 
 export default function ResumePage() {
@@ -114,87 +92,57 @@ export default function ResumePage() {
     }
   }
 
-  const categorizedSkills = analysis?.extractedSkills.reduce((acc, skill) => {
-    const category = skill.category || 'Other';
-    if (!acc[category]) {
-      acc[category] = [];
-    }
-    acc[category].push(skill);
-    return acc;
-  }, {} as Record<string, AnalyzeResumeOutput['extractedSkills']>);
-
   return (
-    <div className="w-full max-w-6xl mx-auto space-y-8">
+    <div className="w-full max-w-4xl mx-auto space-y-8">
       <div className="text-center">
         <h1 className="text-3xl font-bold tracking-tight">Resume Analyzer</h1>
         <p className="mt-2 text-muted-foreground">
-          Upload your resume to get instant AI-powered feedback and unlock your potential.
+          Upload your resume to get instant AI-powered feedback.
         </p>
       </div>
 
-      <Card className="p-0 overflow-hidden shadow-lg">
-        <CardHeader className="bg-muted/20">
-          <div className="flex flex-col md:flex-row items-center gap-4">
-            <div className="flex-1 space-y-1">
-              <CardTitle className="flex items-center gap-2 text-xl">
-                <Upload className="h-6 w-6 text-accent" />
-                Upload Your Resume
-              </CardTitle>
-              <CardDescription>
-                Accepted formats: PDF, DOCX. Max file size: 5MB.
-              </CardDescription>
-            </div>
-            <Input
-              ref={fileInputRef}
-              id="resume-upload"
-              type="file"
-              className="hidden"
-              accept=".pdf,.docx"
-              onChange={handleFileChange}
-            />
-            <div className="flex items-center gap-2">
-              {!file ? (
-                <Button onClick={() => fileInputRef.current?.click()} size="lg">
-                  <Upload className="mr-2" />
-                  Select File
-                </Button>
-              ) : (
-                <Button
-                  onClick={handleAnalyzeClick}
-                  disabled={loading}
-                  size="lg"
-                  className='bg-accent hover:bg-accent/90'
-                >
-                  {loading ? (
-                    <>
-                      <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                      Analyzing...
-                    </>
-                  ) : (
-                    <>
-                      <Sparkles className="mr-2" />
-                      Analyze My Resume
-                    </>
-                  )}
-                </Button>
-              )}
-            </div>
-          </div>
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Upload className="h-5 w-5" />
+            Upload Resume
+          </CardTitle>
+          <CardDescription>
+            Accepted formats: PDF, DOCX. Max file size: 5MB.
+          </CardDescription>
         </CardHeader>
-        {file && !loading && (
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg border">
-              <div className="flex items-center gap-3">
-                <FileText className="h-6 w-6 text-primary" />
-                <span className="font-medium">{file.name}</span>
-                <Badge variant="secondary">{Math.round(file.size / 1024)} KB</Badge>
+        <CardContent className="space-y-4">
+          <Input
+            ref={fileInputRef}
+            id="resume-upload"
+            type="file"
+            className="file:text-white"
+            accept=".pdf,.docx"
+            onChange={handleFileChange}
+          />
+          {file && (
+            <div className="flex items-center justify-between p-2 bg-muted rounded-md">
+              <div className="flex items-center gap-2">
+                <FileText className="h-5 w-5 text-muted-foreground" />
+                <span className="text-sm font-medium">{file.name}</span>
               </div>
               <Button variant="ghost" size="icon" onClick={handleRemoveFile}>
                 <X className="h-4 w-4"/>
               </Button>
             </div>
-          </CardContent>
-        )}
+          )}
+          <Button onClick={handleAnalyzeClick} disabled={loading || !file} className="w-full">
+            {loading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Analyzing...
+              </>
+            ) : (
+              'Analyze Resume'
+            )}
+          </Button>
+          {loading && <Progress value={progress} className="w-full" />}
+        </CardContent>
       </Card>
 
       {error && (
@@ -204,128 +152,42 @@ export default function ResumePage() {
         </Alert>
       )}
 
-      {loading && (
-        <div className="flex flex-col items-center justify-center gap-4 text-center p-8">
-            <Loader2 className="h-12 w-12 animate-spin text-accent" />
-            <p className="text-lg font-semibold">Analyzing your resume...</p>
-            <p className="text-muted-foreground">Our AI is working its magic to give you personalized feedback.</p>
-            <Progress value={progress} className="w-full max-w-sm mt-4 h-2" />
-        </div>
-      )}
-
       {analysis && (
         <div className="space-y-6 animate-in fade-in-50 duration-500">
-           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <Card className="lg:col-span-1">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Wand2 className="h-6 w-6 text-accent" />
-                  Improvement Insights
-                </CardTitle>
-                <CardDescription>Actionable feedback to make your resume stand out.</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <ul className="text-sm space-y-3 list-disc list-inside">
-                  {analysis.improvementInsights.map((insight, index) => (
-                    <li key={index} className="leading-relaxed">{insight}</li>
-                  ))}
-                </ul>
-              </CardContent>
-            </Card>
-            <Card className="lg:col-span-2">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <BrainCircuit className="h-6 w-6 text-accent" />
-                  Extracted Skills
-                </CardTitle>
-                <CardDescription>An AI-generated overview of the skills identified in your resume.</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {categorizedSkills && Object.entries(categorizedSkills).map(([category, skills]) => (
-                    <div key={category}>
-                      <h3 className="font-semibold mb-2">{category}</h3>
-                      <div className="flex flex-wrap gap-2">
-                        {skills.map(skill => (
-                          <Badge key={skill.name} variant="secondary" className="text-sm py-1 px-3">
-                            {skill.name}
-                            <span className={`ml-2 text-xs font-normal px-2 py-0.5 rounded-full ${proficiencyColors[skill.proficiency]}`}>{skill.proficiency}</span>
-                          </Badge>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <TrendingUp className="h-6 w-6 text-accent" />
-                Market Skill Analysis
+                <Lightbulb className="h-5 w-5 text-yellow-400" />
+                Improvement Insights
               </CardTitle>
-              <CardDescription>How your skills stack up against the top 10 most in-demand skills for your likely role.</CardDescription>
             </CardHeader>
             <CardContent>
-              <ResponsiveContainer width="100%" height={400}>
-                <BarChart
-                  data={analysis.marketSkillsComparison}
-                  layout="vertical"
-                  margin={{ top: 5, right: 30, left: 50, bottom: 5 }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" horizontal={false} />
-                  <XAxis type="number" hide />
-                  <YAxis
-                    dataKey="name"
-                    type="category"
-                    tickLine={false}
-                    axisLine={false}
-                    width={150}
-                    tick={{ fontSize: 12 }}
-                  />
-                  <Tooltip
-                    cursor={{ fill: 'hsl(var(--muted))' }}
-                    content={({ active, payload }) => {
-                      if (active && payload && payload.length) {
-                        return (
-                          <div className="rounded-lg border bg-background p-2 shadow-sm">
-                            <p className="font-bold">{`${payload[0].payload.name}`}</p>
-                            <p className={payload[0].payload.inResume ? 'text-green-500' : 'text-red-500'}>
-                              {payload[0].payload.inResume ? 'Found in resume' : 'Not found in resume'}
-                            </p>
-                          </div>
-                        );
-                      }
-                      return null;
-                    }}
-                  />
-                  <Bar dataKey="inResume" barSize={30} radius={[0, 4, 4, 0]}>
-                    {analysis.marketSkillsComparison.map((entry, index) => (
-                      <LabelList
-                        key={`label-${index}`}
-                        dataKey="inResume"
-                        position="right"
-                        formatter={(value: boolean) => (value ? '✅' : '❌')}
-                        fontSize={16}
-                      />
-                    ))}
-                    {
-                      analysis.marketSkillsComparison.map((entry) => (
-                        <Bar
-                          key={entry.name}
-                          dataKey="inResume"
-                          fill={entry.inResume ? 'hsl(var(--accent))' : 'hsl(var(--muted))'}
-                        />
-                      ))
-                    }
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
+              <ul className="list-disc space-y-2 pl-5 text-sm">
+                {analysis.improvementInsights.map((insight, index) => (
+                  <li key={index}>{insight}</li>
+                ))}
+              </ul>
             </CardContent>
           </Card>
 
+          <Card>
+            <CardHeader>
+              <CardTitle>Skill Summary</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground">
+                {analysis.skillSummary}
+              </p>
+              <Separator className="my-4" />
+              <div className="flex flex-wrap gap-2">
+                {analysis.extractedSkills.map((skill) => (
+                  <Badge key={skill} variant="secondary">
+                    {skill}
+                  </Badge>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
         </div>
       )}
     </div>
