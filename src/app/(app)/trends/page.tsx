@@ -228,7 +228,7 @@ export default function TrendsPage() {
                 cursor={{ fill: 'hsl(var(--muted))' }}
                 content={<ChartTooltipContent formatter={(value) => formatNumber(value as number)} indicator="dot" />}
               />
-              <Bar dataKey="openings" fill="hsl(var(--chart-2))" radius={4} />
+              <Bar dataKey="openings" fill="hsl(var(--accent))" radius={4} />
             </BarChart>
           </ChartContainer>
         </CardContent>
