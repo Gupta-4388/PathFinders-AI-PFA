@@ -1,3 +1,101 @@
+import Link from 'next/link';
+import { ArrowRight, Bot, FileText, Briefcase, TrendingUp, BrainCircuit } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import Logo from '@/components/logo';
+
 export default function Home() {
-  return <></>;
+  return (
+    <div className="flex flex-col min-h-screen">
+      <header className="container mx-auto px-4 sm:px-6 lg:px-8 py-4">
+        <Logo />
+      </header>
+      <main className="flex-grow">
+        <section className="relative overflow-hidden py-20 md:py-32">
+          <div
+            aria-hidden="true"
+            className="absolute inset-0 grid grid-cols-2 -space-x-52 opacity-20"
+          >
+            <div className="blur-[106px] h-56 bg-gradient-to-br from-primary to-green-500"></div>
+            <div className="blur-[106px] h-32 bg-gradient-to-r from-green-400 to-cyan-400"></div>
+          </div>
+          <div className="relative container mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <div className="max-w-3xl mx-auto">
+              <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-foreground to-gray-400 leading-tight">
+                Navigate Your Career Path with AI
+              </h1>
+              <p className="mt-6 text-lg text-muted-foreground max-w-xl mx-auto">
+                PathFinder AI leverages cutting-edge artificial intelligence to analyze your skills, guide your growth, and connect you with the future of your career.
+              </p>
+              <div className="mt-8 flex justify-center gap-4">
+                <Button asChild size="lg" className="font-semibold">
+                  <Link href="/dashboard">
+                    Get Started <ArrowRight className="ml-2 h-5 w-5" />
+                  </Link>
+                </Button>
+                <Button asChild size="lg" variant="outline" className="font-semibold">
+                  <Link href="#features">
+                    Learn More
+                  </Link>
+                </Button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section id="features" className="py-20 md:py-28 bg-card/50">
+          <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center mb-12">
+              <h2 className="text-3xl md:text-4xl font-bold">All-in-One Career Platform</h2>
+              <p className="mt-4 text-muted-foreground max-w-2xl mx-auto">
+                From resume to interview, PathFinder AI provides the tools you need to succeed in today's competitive job market.
+              </p>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              <FeatureCard
+                icon={<FileText className="h-8 w-8 text-accent" />}
+                title="Resume Analyzer"
+                description="Upload and analyze your resume to identify skills, projects, and get AI-driven improvement insights."
+              />
+              <FeatureCard
+                icon={<Bot className="h-8 w-8 text-accent" />}
+                title="AI Mentor"
+                description="Receive personalized career guidance, mentorship suggestions, and skill growth roadmaps from our AI chatbot."
+              />
+              <FeatureCard
+                icon={<Briefcase className="h-8 w-8 text-accent" />}
+                title="Career Dashboard"
+                description="Discover recommended roles based on your resume, and visualize skill gaps, growth paths, and salary ranges."
+              />
+              <FeatureCard
+                icon={<TrendingUp className="h-8 w-8 text-accent" />}
+                title="Job Market Trends"
+                description="Visualize current job trends, in-demand skills, and salary benchmarks with dynamic charts and graphs."
+              />
+              <FeatureCard
+                icon={<BrainCircuit className="h-8 w-8 text-accent" />}
+                title="Mock Interview Simulator"
+                description="Practice for interviews with AI-generated questions and receive real-time analysis of your performance."
+              />
+              <div className="flex items-center justify-center p-8 bg-card rounded-lg shadow-sm border border-dashed">
+                 <p className="text-center text-muted-foreground">And much more...</p>
+              </div>
+            </div>
+          </div>
+        </section>
+      </main>
+      <footer className="py-6 bg-background">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 text-center text-muted-foreground">
+          <p>&copy; {new Date().getFullYear()} PathFinder AI. All rights reserved.</p>
+        </div>
+      </footer>
+    </div>
+  );
 }
+
+const FeatureCard = ({ icon, title, description }: { icon: React.ReactNode, title: string, description: string }) => (
+  <div className="p-8 bg-card rounded-lg shadow-sm border text-left transform transition-transform duration-300 hover:-translate-y-2 hover:shadow-accent/20 hover:shadow-lg">
+    <div className="mb-4">{icon}</div>
+    <h3 className="text-xl font-bold mb-2">{title}</h3>
+    <p className="text-muted-foreground">{description}</p>
+  </div>
+);
