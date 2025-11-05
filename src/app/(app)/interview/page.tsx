@@ -51,9 +51,6 @@ type InterviewMode = 'video' | 'audio' | 'text';
 
 export default function InterviewPage() {
   const [domain, setDomain] = useState('');
-  const [experienceLevel, setExperienceLevel] = useState<
-    'entry' | 'mid' | 'senior'
-  >('entry');
   const [interviewMode, setInterviewMode] = useState<InterviewMode>('video');
   const [interviewStarted, setInterviewStarted] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -147,7 +144,6 @@ export default function InterviewPage() {
     try {
       const result = await mockInterviewWithRealtimeFeedback({
         domain,
-        experienceLevel,
         resumeDataUri,
       });
       setCurrentQuestion(result.question);
@@ -162,7 +158,7 @@ export default function InterviewPage() {
     } finally {
       setLoading(false);
     }
-  }, [domain, experienceLevel, toast]);
+  }, [domain, toast]);
 
   const toggleRecording = () => {
     if (!SpeechRecognition) {
@@ -222,7 +218,6 @@ export default function InterviewPage() {
     try {
       const result = await mockInterviewWithRealtimeFeedback({
         domain,
-        experienceLevel,
         resumeDataUri,
       });
       setCurrentQuestion(result.question);
@@ -255,24 +250,6 @@ export default function InterviewPage() {
                 value={domain}
                 onChange={(e) => setDomain(e.target.value)}
               />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="experience">Experience Level</Label>
-              <Select
-                onValueChange={(
-                  value: 'entry' | 'mid' | 'senior'
-                ) => setExperienceLevel(value)}
-                value={experienceLevel}
-              >
-                <SelectTrigger id="experience">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="entry">Entry Level</SelectItem>
-                  <SelectItem value="mid">Mid Level</SelectItem>
-                  <SelectItem value="senior">Senior Level</SelectItem>
-                </SelectContent>
-              </Select>
             </div>
             <div className="space-y-2">
               <Label htmlFor="interview-mode">Interview Mode</Label>

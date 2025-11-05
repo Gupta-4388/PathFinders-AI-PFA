@@ -14,7 +14,6 @@ import {z} from 'genkit';
 
 const MockInterviewInputSchema = z.object({
   domain: z.string().describe('The specific domain for the interview (e.g., software engineering, marketing).'),
-  experienceLevel: z.enum(['entry', 'mid', 'senior']).describe('The experience level of the candidate.'),
   resumeDataUri: z
     .string()
     .describe(
@@ -36,12 +35,11 @@ const mockInterviewPrompt = ai.definePrompt({
   name: 'mockInterviewPrompt',
   input: {schema: MockInterviewInputSchema},
   output: {schema: MockInterviewOutputSchema},
-  prompt: `You are an AI-powered interview simulator. Generate an interview question based on the candidate's resume, domain, and experience level.
+  prompt: `You are an AI-powered interview simulator. Generate an interview question based on the candidate's resume and the interview domain.
 
 Consider the following information:
 
 Domain: {{{domain}}}
-Experience Level: {{{experienceLevel}}}
 Resume: {{media url=resumeDataUri}}
 
 Generate one relevant interview question:
