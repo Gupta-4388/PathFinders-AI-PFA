@@ -48,6 +48,7 @@ const navItems = [
   { href: '/interview', icon: MessageSquare, label: 'Mock Interview' },
   { href: '/mentor', icon: Bot, label: 'AI Mentor' },
   { href: '/trends', icon: TrendingUp, label: 'Job Trends' },
+  { href: '/settings', icon: Settings, label: 'Settings' },
 ];
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
