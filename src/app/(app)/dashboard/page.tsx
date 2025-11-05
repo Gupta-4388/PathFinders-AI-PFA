@@ -169,14 +169,9 @@ export default function DashboardPage() {
                         {path.description}
                       </p>
                     </div>
-                    <Button variant="outline" size="sm" asChild>
-                      <a href={path.roadmapUrl} target="_blank" rel="noopener noreferrer">
-                        View Roadmap
-                      </a>
-                    </Button>
                   </div>
                   
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
+                  <div className="space-y-3 text-sm">
                     <div className="flex items-center gap-2">
                        <TrendingUp className="h-5 w-5 text-muted-foreground" />
                        <div>
@@ -205,7 +200,7 @@ export default function DashboardPage() {
                       <span className="font-medium">Your Skill Match</span>
                       <span className="font-bold text-accent">{path.progress}%</span>
                     </div>
-                    <Progress value={path.progress} />
+                    <Progress value={path.progress} className="[&>div]:bg-green-500" />
                   </div>
                 </div>
               ))}
