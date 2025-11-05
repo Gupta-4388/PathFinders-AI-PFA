@@ -11,42 +11,20 @@ import { Separator } from '@/components/ui/separator';
 import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
-import { Area, AreaChart, CartesianGrid, XAxis } from "recharts";
+import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from "recharts";
 import Link from 'next/link';
 
 const chartConfig = {
-  views: {
-    label: "Views",
-  },
-  React: {
-    label: "React",
-    color: "hsl(var(--chart-1))",
-  },
-  Python: {
-    label: "Python",
+  demand: {
+    label: "Demand",
     color: "hsl(var(--chart-2))",
-  },
-  SQL: {
-    label: "SQL",
-    color: "hsl(var(--chart-3))",
-  },
-   AWS: {
-    label: "AWS",
-    color: "hsl(var(--chart-4))",
-  },
-  "C++": {
-    label: "C++",
-    color: "hsl(var(--chart-5))",
   },
 };
 
-const chartData = [
-  { skill: "React", demand: 186},
-  { skill: "Python", demand: 305 },
-  { skill: "SQL", demand: 237 },
-  { skill: "AWS", demand: 273 },
-  { skill: "C++", demand: 209 },
-];
+type SkillDemandData = {
+  skill: string;
+  demand: number;
+}[];
 
 export default function ResumePage() {
   const [file, setFile] = useState<File | null>(null);
@@ -56,6 +34,7 @@ export default function ResumePage() {
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [progress, setProgress] = useState(0);
+  const [skillDemandData, setSkillDemandData] = useState<SkillDemandData | null>(null);
 
   useEffect(() => {
     let timer: NodeJS.Timeout;
@@ -75,6 +54,28 @@ export default function ResumePage() {
       clearInterval(timer);
     };
   }, [loading]);
+
+  useEffect(() => {
+    if (analysis?.extractedSkills) {
+      // Take top 5 skills and generate mock demand data
+      const demandData = analysis.extractedSkills.slice(0, 5).map(skill => ({
+        skill,
+        demand: Math.floor(Math.random() * (350 - 100 + 1) + 100) // Random demand between 100-350
+      }));
+      setSkillDemandData(demandData);
+    } else {
+      // Set initial static data
+      const initialData = [
+        { skill: "React", demand: 186},
+        { skill: "Python", demand: 305 },
+        { skill: "SQL", demand: 237 },
+        { skill: "AWS", demand: 273 },
+        { skill: "Next.js", demand: 209 },
+      ];
+      setSkillDemandData(initialData);
+    }
+  }, [analysis]);
+
 
   const handleFileChange = (selectedFile: File | null) => {
     if (selectedFile) {
@@ -151,6 +152,11 @@ export default function ResumePage() {
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
+  }
+
+  const handleAnalyzeAnother = () => {
+    setAnalysis(null);
+    handleRemoveFile();
   }
 
   return (
@@ -289,7 +295,7 @@ export default function ResumePage() {
                           </div>
                           </CardContent>
                       </Card>
-                      <Button onClick={() => setAnalysis(null)}>Analyze Another Resume</Button>
+                      <Button onClick={handleAnalyzeAnother}>Analyze Another Resume</Button>
                     </div>
                 )}
             </CardContent>
@@ -299,7 +305,9 @@ export default function ResumePage() {
             <Card>
                 <CardHeader className="items-center pb-0">
                     <CardTitle className='flex items-center gap-2'><TrendingUp /> Skill Demand</CardTitle>
-                    <CardDescription>A quick look at top trending skills.</CardDescription>
+                    <CardDescription>
+                      {analysis ? "Demand for your top skills" : "A look at top trending skills"}
+                    </CardDescription>
                 </CardHeader>
                 <CardContent>
                     <ChartContainer
@@ -308,10 +316,12 @@ export default function ResumePage() {
                     >
                     <AreaChart
                         accessibilityLayer
-                        data={chartData}
+                        data={skillDemandData || []}
                         margin={{
-                        left: 12,
-                        right: 12,
+                        left: 0,
+                        right: 20,
+                        top: 10,
+                        bottom: 10,
                         }}
                     >
                         <CartesianGrid vertical={false} />
@@ -320,8 +330,9 @@ export default function ResumePage() {
                         tickLine={false}
                         axisLine={false}
                         tickMargin={8}
-                        tickFormatter={(value) => value.slice(0, 3)}
+                        tickFormatter={(value) => value.slice(0, 6)}
                         />
+                        <YAxis hide={true} domain={['dataMin - 50', 'dataMax + 50']} />
                         <ChartTooltip
                         cursor={false}
                         content={<ChartTooltipContent indicator="dot" />}
@@ -329,9 +340,9 @@ export default function ResumePage() {
                         <Area
                         dataKey="demand"
                         type="natural"
-                        fill="var(--color-Python)"
+                        fill="var(--color-demand)"
                         fillOpacity={0.4}
-                        stroke="var(--color-Python)"
+                        stroke="var(--color-demand)"
                         stackId="a"
                         />
                     </AreaChart>
