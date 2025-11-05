@@ -72,11 +72,6 @@ export default function Home() {
                     <AuthForm />
                   </DialogContent>
                 </Dialog>
-                <Button asChild size="lg" variant="outline" className="font-semibold">
-                  <Link href="#features">
-                    Learn More
-                  </Link>
-                </Button>
               </div>
             </div>
           </div>
