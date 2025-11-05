@@ -1,3 +1,4 @@
+
 import Link from 'next/link';
 import { ArrowRight, Bot, FileText, Briefcase, TrendingUp, BrainCircuit } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -37,7 +38,7 @@ export default function Home() {
               <div className="mt-8 flex justify-center gap-4">
                 <Button asChild size="lg" className="font-semibold">
                   <Link href="/dashboard">
-                    Get Started <ArrowRight className="ml-2 h-5 w-5" />
+                    Explore <ArrowRight className="ml-2 h-5 w-5" />
                   </Link>
                 </Button>
                 <Button asChild size="lg" variant="outline" className="font-semibold">
