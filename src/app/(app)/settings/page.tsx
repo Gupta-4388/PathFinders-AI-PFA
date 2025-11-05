@@ -13,6 +13,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
+import { ThemeToggle } from '@/components/settings/theme-toggle';
 
 export default function SettingsPage() {
   const { toast } = useToast();
@@ -63,6 +64,17 @@ export default function SettingsPage() {
             </div>
             <Button type="submit">Save changes</Button>
           </form>
+        </CardContent>
+      </Card>
+      <Card>
+        <CardHeader>
+          <CardTitle>Appearance</CardTitle>
+          <CardDescription>
+            Customize the look and feel of the application.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <ThemeToggle />
         </CardContent>
       </Card>
     </div>
