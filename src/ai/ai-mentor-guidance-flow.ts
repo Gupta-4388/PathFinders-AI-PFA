@@ -7,6 +7,10 @@ import {z} from 'genkit';
 const AIMentorProvidePersonalizedGuidanceInputSchema = z.object({
   query: z.string().describe('The query from the user.'),
   resume: z.string().optional().describe('The resume of the user.'),
+  history: z.array(z.object({
+    role: z.enum(['user', 'model']),
+    content: z.string(),
+  })).optional().describe('The chat history between the user and the AI mentor.'),
 });
 export type AIMentorProvidePersonalizedGuidanceInput = z.infer<typeof AIMentorProvidePersonalizedGuidanceInputSchema>;
 
@@ -32,18 +36,29 @@ const prompt = ai.definePrompt({
   name: 'aiMentorProvidePersonalizedGuidancePrompt',
   input: {schema: AIMentorProvidePersonalizedGuidanceInputSchema},
   output: {schema: AIMentorProvidePersonalizedGuidanceOutputSchema},
-  prompt: `You are an AI career mentor. Your goal is to provide personalized career guidance, mentorship suggestions, skill growth roadmaps, and job market insights to the user.
+  prompt: `You are an AI career mentor. Your goal is to provide personalized career guidance, mentorship suggestions, skill growth roadmaps, and job market insights to the user. You can converse in multiple languages, including English and Indian regional languages.
 
-  Consider the user's query and resume (if provided) to provide the best possible advice.
+  Consider the user's query, chat history, and resume (if provided) to provide the best possible advice.
 
-  User Query: {{{query}}}
   {{#if resume}}
   User Resume: {{{resume}}}
   {{/if}}
 
-  Please provide a response that is helpful and informative.
-  Your response should be tailored to the user's specific needs and goals.
-  Include resources where possible as suggestedResources, including YouTube videos, course links, and websites.  Prioritize free certifications.
+  {{#if history}}
+  Chat History:
+  {{#each history}}
+  {{#if (eq this.role 'user')}}
+  User: {{{this.content}}}
+  {{else}}
+  AI: {{{this.content}}}
+  {{/if}}
+  {{/each}}
+  {{/if}}
+
+  User Query: {{{query}}}
+
+  Please provide a helpful and informative response tailored to the user's specific needs and goals.
+  If relevant, include suggested resources like YouTube videos, course links, and websites. Prioritize free certifications and resources.
 `,
 });
 
