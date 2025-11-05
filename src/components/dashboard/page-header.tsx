@@ -8,6 +8,7 @@ const titleMap: { [key: string]: string } = {
   '/interview': 'Mock Interview',
   '/mentor': 'AI Mentor',
   '/trends': 'Job Market Trends',
+  '/settings': 'Settings',
 };
 
 const PageHeader = () => {
