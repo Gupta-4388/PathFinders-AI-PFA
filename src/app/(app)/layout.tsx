@@ -3,7 +3,7 @@
 
 import * as React from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import {
   Activity,
   Book,
@@ -42,6 +42,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import PageHeader from '@/components/dashboard/page-header';
+import { useToast } from '@/hooks/use-toast';
 
 const navItems = [
   { href: '/dashboard', icon: LayoutGrid, label: 'Dashboard' },
@@ -54,6 +55,8 @@ const navItems = [
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
+  const { toast } = useToast();
   const [avatarImage, setAvatarImage] = React.useState<string | null>(
     'https://picsum.photos/seed/user/100/100'
   );
@@ -64,6 +67,16 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       setAvatarImage(savedAvatar);
     }
   }, [pathname]); // Re-check on route change in case settings are updated.
+
+  const handleSignOut = () => {
+    localStorage.clear();
+    toast({
+      title: 'Signed Out',
+      description: 'You have been successfully signed out.',
+    });
+    router.push('/');
+  };
+
 
   return (
     <SidebarProvider>
@@ -121,7 +134,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                     Settings
                   </Link>
                 </DropdownMenuItem>
-                <DropdownMenuItem>
+                <DropdownMenuItem onClick={handleSignOut}>
                   <LogOut className="mr-2" />
                   Sign Out
                 </DropdownMenuItem>

@@ -17,9 +17,11 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { ThemeToggle } from '@/components/settings/theme-toggle';
 import { File, LogOut, Upload, X } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
 export default function SettingsPage() {
   const { toast } = useToast();
+  const router = useRouter();
   const [resumeFile, setResumeFile] = useState<{ name: string } | null>(null);
   const [avatarImage, setAvatarImage] = useState<string | null>(
     'https://picsum.photos/seed/user/100/100'
@@ -137,11 +139,12 @@ export default function SettingsPage() {
   };
 
   const handleSignOut = () => {
+    localStorage.clear();
     toast({
       title: 'Signed Out',
       description: 'You have been successfully signed out.',
     });
-    // Here you would typically redirect the user or clear authentication state
+    router.push('/');
   };
 
 
