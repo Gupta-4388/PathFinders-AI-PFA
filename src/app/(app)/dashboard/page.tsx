@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import {
   ArrowRight,
   BookOpen,
@@ -44,7 +44,7 @@ export default function DashboardPage() {
   const { user } = useUser();
   const firestore = useFirestore();
 
-  const userDocRef = React.useMemo(
+  const userDocRef = useMemo(
     () => (user ? doc(firestore, 'users', user.uid) : null),
     [user, firestore]
   );
