@@ -1,7 +1,6 @@
 'use client';
 
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import {
   Card,
   CardContent,
@@ -74,10 +73,10 @@ export default function DashboardPage() {
       </div>
 
       <div className="text-center py-8">
-        <h2 className="text-2xl font-bold text-accent">
+        <h2 className="text-3xl font-bold text-accent font-headline">
           Transform your AI into a trusted companion
         </h2>
-        <p className="text-muted-foreground">
+        <p className="text-lg text-muted-foreground mt-2">
           Build loyalty with contextual intelligence that lasts beyond a single
           session.
         </p>
