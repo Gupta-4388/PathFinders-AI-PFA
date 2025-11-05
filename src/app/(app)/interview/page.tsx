@@ -405,14 +405,14 @@ export default function InterviewPage() {
             </CardContent>
           </Card>
         ) : interviewMode === 'audio' ? (
-          <Card className="flex-grow flex flex-col items-center justify-center bg-muted">
+          <Card className="flex flex-col items-center justify-center bg-muted p-6">
             <Mic
               className={cn(
-                'w-24 h-24 text-muted-foreground transition-colors',
+                'w-16 h-16 text-muted-foreground transition-colors',
                 isRecording && 'text-green-500 animate-pulse'
               )}
             />
-            <p className="mt-4 text-muted-foreground">
+            <p className="mt-2 text-sm text-muted-foreground">
               {isRecording ? 'Recording...' : 'Audio only mode'}
             </p>
           </Card>
