@@ -48,7 +48,6 @@ const navItems = [
   { href: '/interview', icon: MessageSquare, label: 'Mock Interview' },
   { href: '/mentor', icon: Bot, label: 'AI Mentor' },
   { href: '/trends', icon: TrendingUp, label: 'Job Trends' },
-  { href: '/settings', icon: Settings, label: 'Settings' },
 ];
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
@@ -92,6 +91,30 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               <PageHeader />
             </div>
             <div className="flex-1" />
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="rounded-full">
+                  <Avatar>
+                    <AvatarImage src="https://picsum.photos/seed/user/100/100" />
+                    <AvatarFallback>U</AvatarFallback>
+                  </Avatar>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem asChild>
+                  <Link href="/settings">
+                    <Settings className="mr-2" />
+                    Settings
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem>
+                  <LogOut className="mr-2" />
+                  Sign Out
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </header>
           <main className="flex-1 overflow-auto p-4 md:p-6 lg:p-8">
             {children}
