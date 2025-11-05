@@ -47,11 +47,7 @@ const prompt = ai.definePrompt({
   {{#if history}}
   Chat History:
   {{#each history}}
-  {{#if (eq this.role 'user')}}
-  User: {{{this.content}}}
-  {{else}}
-  AI: {{{this.content}}}
-  {{/if}}
+  {{this.role}}: {{{this.content}}}
   {{/each}}
   {{/if}}
 
