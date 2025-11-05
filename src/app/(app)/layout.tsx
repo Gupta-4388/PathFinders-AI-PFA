@@ -109,7 +109,14 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         </SidebarFooter>
       </Sidebar>
       <SidebarInset>
-        <div className="flex flex-col h-full">
+        <div className="flex flex-col h-full relative">
+          <div
+            aria-hidden="true"
+            className="absolute inset-0 grid grid-cols-2 -space-x-52 opacity-20"
+          >
+            <div className="blur-[106px] h-56 bg-gradient-to-br from-primary to-green-500"></div>
+            <div className="blur-[106px] h-32 bg-gradient-to-r from-green-400 to-cyan-400"></div>
+          </div>
           <header className="flex h-14 lg:h-[60px] items-center gap-4 border-b bg-card/50 px-6 sticky top-0 z-30">
             <div className="flex items-center gap-4">
               <SidebarTrigger className="hidden md:flex" />
@@ -121,7 +128,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               Sign Out
             </Button>
           </header>
-          <main className="flex-1 overflow-auto p-4 md:p-6 lg:p-8">
+          <main className="flex-1 overflow-auto p-4 md:p-6 lg:p-8 z-10">
             {children}
           </main>
         </div>
