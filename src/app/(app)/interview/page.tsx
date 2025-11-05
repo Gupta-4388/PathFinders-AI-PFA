@@ -11,6 +11,7 @@ import {
   Send,
   ArrowRight,
   RefreshCcw,
+  Keyboard,
 } from 'lucide-react';
 import {
   Select,
@@ -38,16 +39,18 @@ import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 
-// SpeechRecognition might not be available on the window object in all environments
 const SpeechRecognition =
   (typeof window !== 'undefined' && window.SpeechRecognition) ||
   (typeof window !== 'undefined' && window.webkitSpeechRecognition);
+
+type InterviewMode = 'video' | 'text';
 
 export default function InterviewPage() {
   const [domain, setDomain] = useState('');
   const [experienceLevel, setExperienceLevel] = useState<
     'entry' | 'mid' | 'senior'
   >('entry');
+  const [interviewMode, setInterviewMode] = useState<InterviewMode>('video');
   const [interviewStarted, setInterviewStarted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [currentQuestion, setCurrentQuestion] = useState('');
@@ -62,7 +65,7 @@ export default function InterviewPage() {
   const { toast } = useToast();
 
   useEffect(() => {
-    if (interviewStarted) {
+    if (interviewStarted && interviewMode === 'video') {
       const getCameraPermission = async () => {
         try {
           const stream = await navigator.mediaDevices.getUserMedia({
@@ -86,10 +89,10 @@ export default function InterviewPage() {
       };
       getCameraPermission();
     }
-  }, [interviewStarted, toast]);
+  }, [interviewStarted, interviewMode, toast]);
 
   useEffect(() => {
-    if (SpeechRecognition) {
+    if (SpeechRecognition && interviewMode === 'video') {
       recognitionRef.current = new SpeechRecognition();
       recognitionRef.current.continuous = true;
       recognitionRef.current.interimResults = true;
@@ -109,7 +112,11 @@ export default function InterviewPage() {
         );
       };
     }
-  }, []);
+
+    return () => {
+      recognitionRef.current?.stop();
+    }
+  }, [interviewMode]);
 
   const startInterview = useCallback(async () => {
     if (!domain) {
@@ -126,7 +133,7 @@ export default function InterviewPage() {
       toast({
         variant: 'destructive',
         title: 'Resume not found',
-        description: 'Please upload a resume on the settings page.',
+        description: 'Please upload a resume on the resume or settings page.',
       });
       setInterviewStarted(false);
       setLoading(false);
@@ -185,9 +192,9 @@ export default function InterviewPage() {
     }
     setLoading(true);
     setAnalysis(null);
-    // This is a simplified simulation. A real implementation would send the answer
-    // to the backend for analysis against the specific question.
     try {
+      // This is a simplified simulation. A real implementation would send the answer
+      // to the backend for analysis against the specific question.
       const analysisResult: MockInterviewOutput = {
         question: currentQuestion,
         analysis: {
@@ -242,8 +249,7 @@ export default function InterviewPage() {
           <CardHeader>
             <CardTitle>Mock Interview Simulator</CardTitle>
             <CardDescription>
-              Prepare for your next interview. Enter your domain and
-              experience level to begin.
+              Prepare for your next interview. Choose your settings to begin.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
@@ -274,6 +280,31 @@ export default function InterviewPage() {
                 </SelectContent>
               </Select>
             </div>
+            <div className="space-y-2">
+              <Label htmlFor="interview-mode">Interview Mode</Label>
+              <Select
+                onValueChange={(value: InterviewMode) =>
+                  setInterviewMode(value)
+                }
+                value={interviewMode}
+              >
+                <SelectTrigger id="interview-mode">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="video">
+                    <div className="flex items-center gap-2">
+                      <Video /> Video Interview
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="text">
+                    <div className="flex items-center gap-2">
+                      <Keyboard /> Text-based Interview
+                    </div>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
             <Button
               onClick={startInterview}
               className="w-full"
@@ -296,38 +327,40 @@ export default function InterviewPage() {
   return (
     <div className="grid md:grid-cols-2 gap-8 h-full">
       <div className="flex flex-col gap-4">
-        <Card className="flex-grow">
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle>Your Camera</CardTitle>
-            <Badge variant={hasCameraPermission ? 'default' : 'destructive'}>
-              {hasCameraPermission ? (
-                <Video className="mr-2" />
-              ) : (
-                <VideoOff className="mr-2" />
-              )}
-              {hasCameraPermission ? 'Camera On' : 'No Camera'}
-            </Badge>
-          </CardHeader>
-          <CardContent>
-            <div className="aspect-video bg-muted rounded-md flex items-center justify-center">
-              {hasCameraPermission ? (
-                <video
-                  ref={videoRef}
-                  className="w-full aspect-video rounded-md"
-                  autoPlay
-                  muted
-                />
-              ) : (
-                <Alert variant="destructive">
-                  <AlertTitle>Camera Access Required</AlertTitle>
-                  <AlertDescription>
-                    Please allow camera access to use this feature.
-                  </AlertDescription>
-                </Alert>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+        {interviewMode === 'video' && (
+          <Card className="flex-grow">
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle>Your Camera</CardTitle>
+              <Badge variant={hasCameraPermission ? 'default' : 'destructive'}>
+                {hasCameraPermission ? (
+                  <Video className="mr-2" />
+                ) : (
+                  <VideoOff className="mr-2" />
+                )}
+                {hasCameraPermission ? 'Camera On' : 'No Camera'}
+              </Badge>
+            </CardHeader>
+            <CardContent>
+              <div className="aspect-video bg-muted rounded-md flex items-center justify-center">
+                {hasCameraPermission ? (
+                  <video
+                    ref={videoRef}
+                    className="w-full aspect-video rounded-md"
+                    autoPlay
+                    muted
+                  />
+                ) : (
+                  <Alert variant="destructive">
+                    <AlertTitle>Camera Access Required</AlertTitle>
+                    <AlertDescription>
+                      Please allow camera access to use this feature.
+                    </AlertDescription>
+                  </Alert>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         <Card>
           <CardHeader>
@@ -335,20 +368,22 @@ export default function InterviewPage() {
           </CardHeader>
           <CardContent className="space-y-4">
             <Textarea
-              placeholder="Your answer will be transcribed here... or type it directly."
+              placeholder={interviewMode === 'video' ? "Your answer will be transcribed here... or type it directly." : "Type your answer here..."}
               value={userAnswer}
               onChange={(e) => setUserAnswer(e.target.value)}
-              rows={5}
+              rows={interviewMode === 'video' ? 5 : 10}
               className="w-full"
             />
             <div className="flex justify-between items-center">
-              <Button onClick={toggleRecording} variant="outline" size="icon">
-                {isRecording ? (
-                  <MicOff className="text-red-500" />
-                ) : (
-                  <Mic />
-                )}
-              </Button>
+              {interviewMode === 'video' ? (
+                <Button onClick={toggleRecording} variant="outline" size="icon">
+                  {isRecording ? (
+                    <MicOff className="text-red-500" />
+                  ) : (
+                    <Mic />
+                  )}
+                </Button>
+              ) : <div></div>}
               <Button onClick={submitAnswer} disabled={loading || !userAnswer}>
                 {loading && analysis === null ? (
                   <Loader2 className="animate-spin" />
@@ -428,3 +463,5 @@ export default function InterviewPage() {
     </div>
   );
 }
+
+    
