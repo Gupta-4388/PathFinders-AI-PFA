@@ -186,15 +186,7 @@ export default function TrendsPage() {
                 cursor={{ fill: 'hsl(var(--muted))' }}
                 content={<ChartTooltipContent indicator="dot" />}
               />
-              <Bar dataKey="demand" radius={4}>
-                {trendsData.marketDemand.map((entry, index) => (
-                  <Bar
-                    key={`bar-${index}`}
-                    dataKey="demand"
-                    fill={`hsl(var(--chart-${(index % 5) + 1}))`}
-                  />
-                ))}
-              </Bar>
+              <Bar dataKey="demand" fill="hsl(var(--chart-1))" radius={4} />
             </BarChart>
           </ChartContainer>
         </CardContent>
