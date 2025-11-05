@@ -38,6 +38,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
+import { cn } from '@/lib/utils';
 
 const SpeechRecognition =
   (typeof window !== 'undefined' && window.SpeechRecognition) ||
@@ -430,8 +431,15 @@ export default function InterviewPage() {
           </Card>
         ) : interviewMode === 'audio' ? (
           <Card className="flex-grow flex flex-col items-center justify-center bg-muted">
-            <Mic className="w-24 h-24 text-muted-foreground" />
-            <p className="mt-4 text-muted-foreground">Audio only mode</p>
+            <Mic
+              className={cn(
+                'w-24 h-24 text-muted-foreground transition-colors',
+                isRecording && 'text-green-500 animate-pulse'
+              )}
+            />
+            <p className="mt-4 text-muted-foreground">
+              {isRecording ? 'Recording...' : 'Audio only mode'}
+            </p>
           </Card>
         ) : null}
 
@@ -473,5 +481,3 @@ export default function InterviewPage() {
     </div>
   );
 }
-
-    
