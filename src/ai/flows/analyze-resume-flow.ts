@@ -47,7 +47,8 @@ const AnalyzeResumeOutputSchema = z.object({
     ),
   extractedSkills: z
     .array(z.string())
-    .describe('A list of skills extracted from the resume.'),
+    .max(10)
+    .describe('A concise list of the top 10 most relevant skills extracted from the resume.'),
   suggestedRoles: z
     .array(SuggestedRoleSchema)
     .describe(
@@ -69,7 +70,7 @@ const analyzeResumePrompt = ai.definePrompt({
   prompt: `You are an expert career coach and tech recruiter. Analyze the following resume and provide:
 1.  A high-level summary of the user's skills.
 2.  A short, optimized list of actionable insights to improve the resume (e.g., clarity, impact, missing information).
-3.  A list of skills extracted from the resume content.
+3.  A concise list of the top 10 most relevant skills extracted from the resume content.
 4.  Analyze current job market openings and suggest 3-5 suitable roles for the candidate, including a title, a short description, and a match confidence score.
 
 Resume:
