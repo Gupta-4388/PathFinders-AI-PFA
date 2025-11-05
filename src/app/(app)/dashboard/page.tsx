@@ -1,10 +1,10 @@
 
 'use client';
 
+import { useEffect, useState } from 'react';
 import {
-  Activity,
   ArrowRight,
-  Book,
+  BookOpen,
   CheckCircle,
   Lightbulb,
   Loader2,
@@ -12,19 +12,32 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 
-import { Badge } from '@/components/ui/badge';
+import {
+  RecommendCareerPathsOutput,
+} from '@/ai/flows/recommend-career-paths-flow';
 import { Button } from '@/components/ui/button';
 import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 
 export default function DashboardPage() {
+  const [recommendedPaths, setRecommendedPaths] =
+    useState<RecommendCareerPathsOutput | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const data = localStorage.getItem('recommendedCareerPaths');
+    if (data) {
+      setRecommendedPaths(JSON.parse(data));
+    }
+    setLoading(false);
+  }, []);
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       <Card className="col-span-1 lg:col-span-3">
@@ -90,6 +103,61 @@ export default function DashboardPage() {
             </div>
             <ArrowRight className="w-5 h-5 ml-auto text-muted-foreground" />
           </Link>
+        </CardContent>
+      </Card>
+
+      <Card className="col-span-1 md:col-span-2 lg:col-span-3">
+        <CardHeader>
+          <CardTitle className="text-accent">Recommended Career Paths</CardTitle>
+          <CardDescription>
+            Based on your resume, here are some career paths you could excel in.
+            Upload your resume to see recommendations.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {loading ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="w-8 h-8 animate-spin text-primary" />
+            </div>
+          ) : recommendedPaths && recommendedPaths.careerPaths.length > 0 ? (
+            <div className="grid gap-6">
+              {recommendedPaths.careerPaths.map((path, index) => (
+                <div key={index} className="p-4 border rounded-lg">
+                  <div className="flex justify-between items-start mb-2">
+                    <div>
+                      <h3 className="font-bold">{path.title}</h3>
+                      <p className="text-sm text-muted-foreground">
+                        {path.description}
+                      </p>
+                    </div>
+                    <Button variant="outline" size="sm" asChild>
+                      <a href={path.roadmapUrl} target="_blank" rel="noopener noreferrer">
+                        <BookOpen className="mr-2 h-4 w-4" />
+                        Roadmap
+                      </a>
+                    </Button>
+                  </div>
+                  <div className="space-y-2 mt-4">
+                    <div className="flex justify-between items-center text-sm">
+                      <span className="font-medium">Skill Match</span>
+                      <span className="font-bold text-accent">{path.progress}%</span>
+                    </div>
+                    <Progress value={path.progress} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8 text-muted-foreground">
+              <p>No career paths recommended yet.</p>
+              <p>
+                <Link href="/resume" className="text-primary hover:underline">
+                  Analyze your resume
+                </Link>{' '}
+                to get started.
+              </p>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

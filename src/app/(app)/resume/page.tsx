@@ -9,6 +9,9 @@ import {
   analyzeResume,
   AnalyzeResumeOutput,
 } from '@/ai/flows/analyze-resume-flow';
+import {
+  recommendCareerPaths,
+} from '@/ai/flows/recommend-career-paths-flow';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
@@ -37,14 +40,25 @@ export default function ResumePage() {
   const handleAnalysis = async (fileToAnalyze: File) => {
     setLoading(true);
     setAnalysis(null);
+    localStorage.removeItem('recommendedCareerPaths'); // Clear previous recommendations
 
     const reader = new FileReader();
     reader.readAsDataURL(fileToAnalyze);
     reader.onload = async () => {
       try {
         const resumeDataUri = reader.result as string;
-        const result = await analyzeResume({ resumeDataUri });
-        setAnalysis(result);
+        const analysisResult = await analyzeResume({ resumeDataUri });
+        setAnalysis(analysisResult);
+
+        if (analysisResult.extractedSkills.length > 0) {
+          const careerPathResult = await recommendCareerPaths({
+            skills: analysisResult.extractedSkills,
+          });
+          localStorage.setItem(
+            'recommendedCareerPaths',
+            JSON.stringify(careerPathResult)
+          );
+        }
       } catch (error) {
         console.error('Error analyzing resume:', error);
         toast({
@@ -115,6 +129,7 @@ export default function ResumePage() {
                 onClick={() => {
                   setFile(null);
                   setAnalysis(null);
+                  localStorage.removeItem('recommendedCareerPaths');
                 }}
               >
                 Remove
