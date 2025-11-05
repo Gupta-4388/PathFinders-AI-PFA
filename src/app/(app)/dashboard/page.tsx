@@ -173,7 +173,7 @@ export default function DashboardPage() {
       </Card>
 
       {loading && Array.from({ length: 3 }).map((_, index) => (
-        <Card key={index} className="flex flex-col">
+        <Card key={index} className="flex flex-col lg:col-span-1">
           <CardHeader>
             <Skeleton className="h-6 w-3/4" />
             <Skeleton className="h-4 w-1/2" />
@@ -198,7 +198,7 @@ export default function DashboardPage() {
       ))}
 
       {!loading && careerPaths && careerPaths.length > 0 && careerPaths.map((path, index) => (
-        <Card key={index} className="flex flex-col">
+        <Card key={index} className="flex flex-col lg:col-span-1">
           <CardHeader>
             <div className="flex justify-between items-start">
               <CardTitle>{path.title}</CardTitle>
