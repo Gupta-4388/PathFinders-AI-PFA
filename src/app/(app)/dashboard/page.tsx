@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useEffect, useState, useMemo } from 'react';
+import { useMemo, useEffect, useState } from 'react';
 import {
   ArrowRight,
   BookOpen,
@@ -116,8 +116,8 @@ export default function DashboardPage() {
             href="/resume"
             className="flex items-center gap-4 p-4 rounded-lg hover:bg-muted transition-colors"
           >
-            <div className="bg-primary/10 p-3 rounded-full">
-              <CheckCircle className="w-5 h-5 text-primary" />
+            <div className="bg-accent/10 p-3 rounded-full">
+              <CheckCircle className="w-5 h-5 text-accent" />
             </div>
             <div>
               <p className="font-semibold">Analyze Your Resume</p>
@@ -131,8 +131,8 @@ export default function DashboardPage() {
             href="/mentor"
             className="flex items-center gap-4 p-4 rounded-lg hover:bg-muted transition-colors"
           >
-            <div className="bg-primary/10 p-3 rounded-full">
-              <Lightbulb className="w-5 h-5 text-primary" />
+            <div className="bg-accent/10 p-3 rounded-full">
+              <Lightbulb className="w-5 h-5 text-accent" />
             </div>
             <div>
               <p className="font-semibold">Chat with AI Mentor</p>
@@ -146,8 +146,8 @@ export default function DashboardPage() {
             href="/trends"
             className="flex items-center gap-4 p-4 rounded-lg hover:bg-muted transition-colors"
           >
-            <div className="bg-primary/10 p-3 rounded-full">
-              <TrendingUp className="w-5 h-5 text-primary" />
+            <div className="bg-accent/10 p-3 rounded-full">
+              <TrendingUp className="w-5 h-5 text-accent" />
             </div>
             <div>
               <p className="font-semibold">Explore Job Trends</p>
