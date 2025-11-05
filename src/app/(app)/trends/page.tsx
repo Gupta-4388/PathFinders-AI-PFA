@@ -187,11 +187,11 @@ export default function TrendsPage() {
                 content={<ChartTooltipContent indicator="dot" />}
               />
               <Bar dataKey="demand" radius={4}>
-                {trendsData.marketDemand.map((_, index) => (
+                {trendsData.marketDemand.map((entry, index) => (
                   <Bar
-                    key={index}
+                    key={`bar-${index}`}
                     dataKey="demand"
-                    fill={`hsl(var(--chart-${(index % 3) + 1}))`}
+                    fill={`hsl(var(--chart-${(index % 5) + 1}))`}
                   />
                 ))}
               </Bar>
