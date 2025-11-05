@@ -46,7 +46,7 @@ const recommendCareerPathsPrompt = ai.definePrompt({
 User Skills:
 {{#each skills}}- {{{this}}}{{/each}}
 
-For each path, provide a title, description, demand score (1-10), estimated salary range, a list of 5 key skills, the user's skill match percentage, and a relevant roadmap URL from a site like Coursera, Udemy, or a professional certification body.`,
+For each path, provide a title, description, demand score (1-10), estimated salary range, a list of 5 key skills, the user's skill match percentage, and a relevant roadmap URL from a free and readily accessible learning platform. Prioritize resources like Coursera's free courses, edX, freeCodeCamp, or official documentation.`,
 });
 
 const recommendCareerPathsFlow = ai.defineFlow(
