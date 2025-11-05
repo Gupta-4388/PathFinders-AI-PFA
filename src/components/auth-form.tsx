@@ -6,6 +6,11 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Eye, EyeOff, Github } from 'lucide-react';
+import {
+  signInWithPopup,
+  GoogleAuthProvider,
+  GithubAuthProvider,
+} from 'firebase/auth';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,6 +20,9 @@ import { useToast } from '@/hooks/use-toast';
 import {
   Card,
   CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
 } from './ui/card';
 import {
   Form,
@@ -26,6 +34,11 @@ import {
 } from './ui/form';
 import { Separator } from './ui/separator';
 import Link from 'next/link';
+import { useAuth } from '@/firebase';
+import {
+  initiateEmailSignIn,
+  initiateEmailSignUp,
+} from '@/firebase/non-blocking-login';
 
 const signInSchema = z.object({
   email: z.string().email({ message: 'Please enter a valid email.' }),
@@ -35,7 +48,9 @@ const signInSchema = z.object({
 const signUpSchema = z.object({
   name: z.string().min(2, { message: 'Name must be at least 2 characters.' }),
   email: z.string().email({ message: 'Please enter a valid email.' }),
-  password: z.string().min(8, { message: 'Password must be at least 8 characters.' }),
+  password: z
+    .string()
+    .min(8, { message: 'Password must be at least 8 characters.' }),
 });
 
 const GoogleIcon = () => (
@@ -50,6 +65,7 @@ const GoogleIcon = () => (
 export function AuthForm() {
   const router = useRouter();
   const { toast } = useToast();
+  const auth = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [activeTab, setActiveTab] = useState('sign-in');
 
@@ -64,7 +80,7 @@ export function AuthForm() {
   });
 
   const onSignInSubmit = (values: z.infer<typeof signInSchema>) => {
-    console.log('Sign In:', values);
+    initiateEmailSignIn(auth, values.email, values.password);
     toast({
       title: 'Signed In',
       description: 'Welcome back! You have been successfully signed in.',
@@ -73,7 +89,7 @@ export function AuthForm() {
   };
 
   const onSignUpSubmit = (values: z.infer<typeof signUpSchema>) => {
-    console.log('Sign Up:', values);
+    initiateEmailSignUp(auth, values.email, values.password);
     toast({
       title: 'Account Created',
       description: 'Welcome! Your account has been created successfully.',
@@ -81,9 +97,55 @@ export function AuthForm() {
     router.push('/dashboard');
   };
 
+  const handleGoogleSignIn = async () => {
+    const provider = new GoogleAuthProvider();
+    try {
+      await signInWithPopup(auth, provider);
+      toast({
+        title: 'Signed In with Google',
+        description: 'You have been successfully signed in.',
+      });
+      router.push('/dashboard');
+    } catch (error) {
+      console.error('Google Sign-In Error:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Sign-In Failed',
+        description: 'Could not sign in with Google. Please try again.',
+      });
+    }
+  };
+
+  const handleGithubSignIn = async () => {
+    const provider = new GithubAuthProvider();
+    try {
+      await signInWithPopup(auth, provider);
+      toast({
+        title: 'Signed In with GitHub',
+        description: 'You have been successfully signed in.',
+      });
+      router.push('/dashboard');
+    } catch (error) {
+      console.error('GitHub Sign-In Error:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Sign-In Failed',
+        description: 'Could not sign in with GitHub. Please try again.',
+      });
+    }
+  };
+
   return (
     <Card className="border-0 shadow-none">
-      <CardContent className="px-0 pb-0">
+      <CardHeader>
+        <CardTitle>Welcome to PathFinder AI</CardTitle>
+        <CardDescription>
+          {activeTab === 'sign-in'
+            ? 'Sign in to access your dashboard.'
+            : 'Create an account to get started.'}
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="px-6 pb-0">
         <Tabs
           defaultValue="sign-in"
           value={activeTab}
@@ -237,20 +299,44 @@ export function AuthForm() {
 
         <div className="relative my-4">
           <Separator />
-          <p className="absolute -top-3 left-1/2 -translate-x-1/2 bg-background px-2 text-sm text-muted-foreground">
+          <p className="absolute -top-3 left-1/2 -translate-x-1/2 bg-card px-2 text-sm text-muted-foreground">
             OR
           </p>
         </div>
 
         <div className="grid grid-cols-2 gap-4">
-          <Button variant="outline">
+          <Button variant="outline" onClick={handleGoogleSignIn}>
             <GoogleIcon />
             Google
           </Button>
-          <Button variant="outline">
+          <Button variant="outline" onClick={handleGithubSignIn}>
             <Github />
             GitHub
           </Button>
+        </div>
+
+        <div className="mt-6 text-center text-sm text-muted-foreground">
+          {activeTab === 'sign-in' ? (
+            <>
+              Don't have an account?{' '}
+              <button
+                onClick={() => setActiveTab('sign-up')}
+                className="font-medium text-primary hover:underline"
+              >
+                Sign Up
+              </button>
+            </>
+          ) : (
+            <>
+              Already have an account?{' '}
+              <button
+                onClick={() => setActiveTab('sign-in')}
+                className="font-medium text-primary hover:underline"
+              >
+                Sign In
+              </button>
+            </>
+          )}
         </div>
       </CardContent>
     </Card>
