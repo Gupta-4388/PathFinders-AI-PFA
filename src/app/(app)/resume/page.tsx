@@ -1,14 +1,138 @@
-import React from 'react';
+'use client';
+
+import { useState } from 'react';
+import { Upload, File, Loader2 } from 'lucide-react';
+import { useDropzone } from 'react-dropzone';
+
+import {
+  analyzeResume,
+  AnalyzeResumeOutput,
+} from '@/ai/flows/analyze-resume-flow';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useToast } from '@/hooks/use-toast';
+import ResumeAnalysis from '@/components/dashboard/resume-analysis';
 
 export default function ResumePage() {
+  const [analysis, setAnalysis] = useState<AnalyzeResumeOutput | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [file, setFile] = useState<File | null>(null);
+  const { toast } = useToast();
+
+  const onDrop = async (acceptedFiles: File[]) => {
+    const uploadedFile = acceptedFiles[0];
+    if (!uploadedFile) {
+      toast({
+        variant: 'destructive',
+        title: 'File upload failed',
+        description: 'Please select a valid file.',
+      });
+      return;
+    }
+    setFile(uploadedFile);
+    await handleAnalysis(uploadedFile);
+  };
+
+  const handleAnalysis = async (fileToAnalyze: File) => {
+    setLoading(true);
+    setAnalysis(null);
+
+    const reader = new FileReader();
+    reader.readAsDataURL(fileToAnalyze);
+    reader.onload = async () => {
+      try {
+        const resumeDataUri = reader.result as string;
+        const result = await analyzeResume({ resumeDataUri });
+        setAnalysis(result);
+      } catch (error) {
+        console.error('Error analyzing resume:', error);
+        toast({
+          variant: 'destructive',
+          title: 'Analysis Failed',
+          description: 'Could not analyze the resume. Please try again.',
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+    reader.onerror = (error) => {
+      console.error('Error reading file:', error);
+      toast({
+        variant: 'destructive',
+        title: 'File Read Error',
+        description: 'Could not read the uploaded file.',
+      });
+      setLoading(false);
+    };
+  };
+
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+    onDrop,
+    accept: {
+      'application/pdf': ['.pdf'],
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document': [
+        '.docx',
+      ],
+      'text/plain': ['.txt'],
+    },
+    maxFiles: 1,
+  });
+
   return (
-    <div className="w-full">
-      <div className="space-y-4">
-        <h1 className="text-2xl font-bold tracking-tight">Resume Analyzer</h1>
-        <p className="text-muted-foreground">
-          Upload your resume to get a detailed analysis of your skills and experience. This feature is under development.
-        </p>
-      </div>
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-accent">Resume Analyzer</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div
+            {...getRootProps()}
+            className={`flex flex-col items-center justify-center p-8 border-2 border-dashed rounded-lg cursor-pointer transition-colors ${
+              isDragActive
+                ? 'border-primary bg-primary/10'
+                : 'border-border hover:border-primary/50'
+            }`}
+          >
+            <input {...getInputProps()} />
+            <Upload className="w-12 h-12 text-muted-foreground" />
+            <p className="mt-4 text-center text-muted-foreground">
+              {isDragActive
+                ? 'Drop the file here ...'
+                : "Drag 'n' drop your resume here, or click to select a file"}
+            </p>
+            <p className="text-xs text-muted-foreground mt-1">
+              (PDF, DOCX, TXT)
+            </p>
+          </div>
+          {file && (
+            <div className="mt-4 flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+              <div className="flex items-center gap-3">
+                <File className="w-5 h-5 text-primary" />
+                <span className="font-medium">{file.name}</span>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setFile(null);
+                  setAnalysis(null);
+                }}
+              >
+                Remove
+              </Button>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {loading && (
+        <div className="flex items-center justify-center py-12">
+          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+          <p className="ml-4 text-lg">Analyzing your resume...</p>
+        </div>
+      )}
+
+      {analysis && <ResumeAnalysis analysis={analysis} />}
     </div>
   );
 }
