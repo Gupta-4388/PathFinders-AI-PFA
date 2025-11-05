@@ -26,6 +26,9 @@ export default function SettingsPage() {
   const [avatarImage, setAvatarImage] = useState<string | null>(
     'https://picsum.photos/seed/user/100/100'
   );
+  const [name, setName] = useState('Your Name');
+  const [email, setEmail] = useState('your.email@example.com');
+  const [careerPath, setCareerPath] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -37,10 +40,25 @@ export default function SettingsPage() {
     if (savedAvatar) {
       setAvatarImage(savedAvatar);
     }
+    const savedName = localStorage.getItem('userName');
+    if (savedName) {
+      setName(savedName);
+    }
+    const savedEmail = localStorage.getItem('userEmail');
+    if (savedEmail) {
+      setEmail(savedEmail);
+    }
+    const savedCareerPath = localStorage.getItem('userCareerPath');
+    if (savedCareerPath) {
+      setCareerPath(savedCareerPath);
+    }
   }, []);
 
   const handleProfileSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    localStorage.setItem('userName', name);
+    localStorage.setItem('userEmail', email);
+    localStorage.setItem('userCareerPath', careerPath);
     toast({
       title: 'Profile Updated',
       description: 'Your profile information has been saved.',
@@ -184,15 +202,15 @@ export default function SettingsPage() {
             <div className="grid md:grid-cols-2 gap-6">
               <div className="space-y-2">
                 <Label htmlFor="name">Name</Label>
-                <Input id="name" defaultValue="Your Name" />
+                <Input id="name" value={name} onChange={(e) => setName(e.target.value)} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
-                <Input id="email" type="email" defaultValue="your.email@example.com" />
+                <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
               </div>
               <div className="space-y-2 md:col-span-2">
                 <Label htmlFor="career-path">Career Path</Label>
-                <Input id="career-path" placeholder="e.g., Software Engineer, Product Manager" />
+                <Input id="career-path" placeholder="e.g., Software Engineer, Product Manager" value={careerPath} onChange={(e) => setCareerPath(e.target.value)} />
               </div>
             </div>
             <Button type="submit">Save changes</Button>
@@ -298,3 +316,5 @@ export default function SettingsPage() {
     </div>
   );
 }
+
+    
