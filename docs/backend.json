@@ -1,0 +1,138 @@
+{
+  "entities": {
+    "User": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "User",
+      "type": "object",
+      "description": "Represents a user of the PathFinder AI application.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the User entity."
+        },
+        "email": {
+          "type": "string",
+          "description": "User's email address.",
+          "format": "email"
+        },
+        "name": {
+          "type": "string",
+          "description": "User's full name."
+        },
+        "signUpMethod": {
+          "type": "string",
+          "description": "The method used to sign up (e.g., 'google', 'github', 'email')."
+        },
+        "profilePicture": {
+          "type": "string",
+          "description": "URL of the user's profile picture.",
+          "format": "uri"
+        },
+        "linkedInProfile": {
+          "type": "string",
+          "description": "URL of the user's LinkedIn profile, if provided.",
+          "format": "uri"
+        },
+        "naukriProfile": {
+          "type": "string",
+          "description": "URL of the user's Naukri profile, if provided.",
+          "format": "uri"
+        }
+      },
+      "required": [
+        "id",
+        "email",
+        "name",
+        "signUpMethod"
+      ]
+    },
+    "OAuthProvider": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "OAuthProvider",
+      "type": "object",
+      "description": "Stores data from OAuth providers like Google and Github.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the OAuth Provider entity."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to User. (Relationship: User 1:1 OAuthProvider)"
+        },
+        "providerName": {
+          "type": "string",
+          "description": "Name of the OAuth provider (e.g., 'google', 'github')."
+        },
+        "providerUserId": {
+          "type": "string",
+          "description": "User ID from the OAuth provider."
+        },
+        "accessToken": {
+          "type": "string",
+          "description": "Access token from the OAuth provider."
+        },
+        "refreshToken": {
+          "type": "string",
+          "description": "Refresh token from the OAuth provider."
+        },
+        "expiryDate": {
+          "type": "string",
+          "description": "Expiration date and time of the access token.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "providerName",
+        "providerUserId",
+        "accessToken",
+        "expiryDate"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/users/{userId}",
+        "definition": {
+          "entityName": "User",
+          "schema": {
+            "$ref": "#/backend/entities/User"
+          },
+          "description": "Stores user profiles. Includes user's basic information. Uses path-based ownership for private user data.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier for the user."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/oauth_providers/{oauthProviderId}",
+        "definition": {
+          "entityName": "OAuthProvider",
+          "schema": {
+            "$ref": "#/backend/entities/OAuthProvider"
+          },
+          "description": "Stores OAuth provider data like access tokens and refresh tokens. Uses document ID for uniqueness.",
+          "params": [
+            {
+              "name": "oauthProviderId",
+              "description": "The unique identifier for the OAuth Provider."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "This Firestore data structure is designed to support user authentication with Google and GitHub, while adhering to the principles of Authorization Independence, Structural Segregation, Access Modeling, and Data Clarity. The key strategy is to denormalize relevant authorization data to avoid `get()` calls in security rules, ensuring atomic operations and easier debugging.\n\n1.  **Users Collection:** Stores user profiles with basic information. The `signUpMethod` field indicates the authentication provider used (google, github, email).\n2.  **OAuthProviders Collection:**  This collection stores the OAuth access and refresh tokens of the users. The `userId` field points to the User ID. A `providerName` indicates which service the tokens belong to.\n\n**Authorization Independence:** Authorization independence is achieved because the `User` document contains the `id`, `email`, `name`, and `signUpMethod` fields.\n\n**QAPs (Rules are not Filters):** The design supports secure `list` operations by ensuring that collections contain documents with homogeneous security postures. For example, user-specific data is stored under `/users/{userId}`, allowing rules to easily filter based on the request's `auth.uid` without needing complex filtering logic."
+  }
+}

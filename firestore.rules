@@ -1,0 +1,91 @@
+/**
+ * @fileoverview Firestore Security Rules for PathFinder AI application.
+ *
+ * Core Philosophy:
+ * This ruleset enforces a strict user-ownership model for user profiles
+ * and manages OAuth provider data, ensuring that users can only access
+ * their own information and that sensitive OAuth tokens are protected.
+ *
+ * Data Structure:
+ * - /users/{userId}: Stores user profiles.
+ * - /oauth_providers/{oauthProviderId}: Stores OAuth provider data.
+ *
+ * Key Security Decisions:
+ * - Users can only create, read, update, and delete their own user documents.
+ * - OAuth provider data is secured by associating it with a specific user ID,
+ *   ensuring that only the associated user can access the OAuth tokens.
+ * - Read operations are allowed only for authenticated users accessing their own data.
+ * - The `signUpMethod` field in the user document indicates the authentication provider used.
+ *
+ * Denormalization for Authorization:
+ * The `userId` field in the `OAuthProvider` collection is denormalized to ensure that only the
+ * associated user can access the OAuth tokens. This avoids the need for complex `get()` calls
+ * in security rules.
+ *
+ * Structural Segregation:
+ * User-specific data is stored under `/users/{userId}`, allowing rules to easily filter based on the
+ * request's `auth.uid` without needing complex filtering logic.
+ */
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    /**
+     * @description Secures user profiles, ensuring users can only manage their own data.
+     * @path /users/{userId}
+     * @allow (create) - User with UID 'user123' can create their profile if request.auth.uid == 'user123'.
+     * @allow (get, update, delete) - User with UID 'user123' can access/modify their profile at /users/user123 if authenticated.
+     * @deny (create) - User with UID 'user456' cannot create a profile with ID 'user123'.
+     * @deny (get, update, delete) - User with UID 'user456' cannot access/modify the profile at /users/user123.
+     * @principle Enforces path-based ownership for user data.
+     */
+    match /users/{userId} {
+      function isSignedIn() {
+        return request.auth != null;
+      }
+
+      function isOwner(userId) {
+        return isSignedIn() && request.auth.uid == userId;
+      }
+
+      function isExistingOwner(userId) {
+        return isOwner(userId) && resource != null;
+      }
+
+      allow get: if isOwner(userId);
+      allow list: if isOwner(userId);
+      allow create: if isOwner(userId) && request.resource.data.id == userId;
+      allow update: if isExistingOwner(userId) && request.resource.data.id == resource.data.id;
+      allow delete: if isExistingOwner(userId);
+    }
+
+    /**
+     * @description Secures OAuth provider data, linking tokens to specific users.
+     * @path /oauth_providers/{oauthProviderId}
+     * @allow (create) - User can create OAuth provider data if the userId matches their auth UID.
+     * @allow (get, update, delete) - User can manage OAuth provider data if the userId matches their auth UID.
+     * @deny (create) - User cannot create OAuth provider data for another user.
+     * @deny (get, update, delete) - User cannot manage OAuth provider data for another user.
+     * @principle Restricts access to OAuth tokens to the associated user.
+     */
+    match /oauth_providers/{oauthProviderId} {
+      function isSignedIn() {
+        return request.auth != null;
+      }
+
+      function isOwner(userId) {
+        return isSignedIn() && request.auth.uid == userId;
+      }
+
+      function isExistingOwner(userId) {
+        return isOwner(userId) && resource != null;
+      }
+
+      allow get: if isOwner(resource.data.userId);
+      allow list: if false; // Listing OAuth providers is not allowed.
+      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+      allow update: if isExistingOwner(resource.data.userId) && request.resource.data.userId == resource.data.userId;
+      allow delete: if isExistingOwner(resource.data.userId);
+    }
+  }
+}
