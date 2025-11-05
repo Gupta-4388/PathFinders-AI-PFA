@@ -327,6 +327,69 @@ export default function InterviewPage() {
   return (
     <div className="grid md:grid-cols-2 gap-8 h-full">
       <div className="flex flex-col gap-4">
+        <Card className="flex-grow">
+          <CardHeader>
+            <CardTitle>Interview Question</CardTitle>
+          </CardHeader>
+          <CardContent className="text-lg font-semibold min-h-[100px]">
+            {loading && !currentQuestion ? (
+              <Loader2 className="animate-spin" />
+            ) : (
+              currentQuestion
+            )}
+          </CardContent>
+        </Card>
+        {analysis ? (
+          <Card>
+            <CardHeader>
+              <CardTitle>AI Feedback</CardTitle>
+              <CardDescription>
+                Overall Score:
+                <Badge className="ml-2 text-lg">{analysis.score}%</Badge>
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <h4 className="font-semibold">Clarity:</h4>
+                <p className="text-muted-foreground">
+                  {analysis.analysis?.clarity}
+                </p>
+              </div>
+              <div>
+                <h4 className="font-semibold">Tone:</h4>
+                <p className="text-muted-foreground">
+                  {analysis.analysis?.tone}
+                </p>
+              </div>
+              <div>
+                <h4 className="font-semibold">Content:</h4>
+                <p className="text-muted-foreground">
+                  {analysis.analysis?.content}
+                </p>
+              </div>
+              <div>
+                <h4 className="font-semibold">Improvement Tips:</h4>
+                <p className="text-muted-foreground">
+                  {analysis.improvementTips}
+                </p>
+              </div>
+              <Button onClick={nextQuestion} className="w-full">
+                Next Question <RefreshCcw className="ml-2" />
+              </Button>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="flex items-center justify-center text-muted-foreground h-full">
+            <p>
+              {loading && analysis === null
+                ? 'Analyzing your answer...'
+                : 'Your feedback will appear here.'}
+            </p>
+          </div>
+        )}
+      </div>
+
+      <div className="flex flex-col gap-4">
         {interviewMode === 'video' && (
           <Card className="flex-grow">
             <CardHeader className="flex flex-row items-center justify-between">
@@ -397,71 +460,6 @@ export default function InterviewPage() {
           </CardContent>
         </Card>
       </div>
-
-      <div className="flex flex-col gap-4">
-        <Card className="flex-grow">
-          <CardHeader>
-            <CardTitle>Interview Question</CardTitle>
-          </CardHeader>
-          <CardContent className="text-lg font-semibold min-h-[100px]">
-            {loading && !currentQuestion ? (
-              <Loader2 className="animate-spin" />
-            ) : (
-              currentQuestion
-            )}
-          </CardContent>
-        </Card>
-        {analysis ? (
-          <Card>
-            <CardHeader>
-              <CardTitle>AI Feedback</CardTitle>
-              <CardDescription>
-                Overall Score:
-                <Badge className="ml-2 text-lg">{analysis.score}%</Badge>
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <h4 className="font-semibold">Clarity:</h4>
-                <p className="text-muted-foreground">
-                  {analysis.analysis?.clarity}
-                </p>
-              </div>
-              <div>
-                <h4 className="font-semibold">Tone:</h4>
-                <p className="text-muted-foreground">
-                  {analysis.analysis?.tone}
-                </p>
-              </div>
-              <div>
-                <h4 className="font-semibold">Content:</h4>
-                <p className="text-muted-foreground">
-                  {analysis.analysis?.content}
-                </p>
-              </div>
-              <div>
-                <h4 className="font-semibold">Improvement Tips:</h4>
-                <p className="text-muted-foreground">
-                  {analysis.improvementTips}
-                </p>
-              </div>
-              <Button onClick={nextQuestion} className="w-full">
-                Next Question <RefreshCcw className="ml-2" />
-              </Button>
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="flex items-center justify-center text-muted-foreground h-full">
-            <p>
-              {loading && analysis === null
-                ? 'Analyzing your answer...'
-                : 'Your feedback will appear here.'}
-            </p>
-          </div>
-        )}
-      </div>
     </div>
   );
 }
-
-    
