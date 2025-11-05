@@ -1,6 +1,8 @@
 
 'use client';
 
+import React, { useState, useEffect, useCallback } from 'react';
+import { useDropzone } from 'react-dropzone';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import {
@@ -14,9 +16,18 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { ThemeToggle } from '@/components/settings/theme-toggle';
+import { File, Upload, X } from 'lucide-react';
 
 export default function SettingsPage() {
   const { toast } = useToast();
+  const [resumeFile, setResumeFile] = useState<{ name: string } | null>(null);
+
+  useEffect(() => {
+    const savedResumeName = localStorage.getItem('resumeFileName');
+    if (savedResumeName) {
+      setResumeFile({ name: savedResumeName });
+    }
+  }, []);
 
   const handleProfileSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -33,6 +44,69 @@ export default function SettingsPage() {
       description: 'Your password has been changed successfully.',
     });
   };
+  
+  const onDrop = useCallback((acceptedFiles: File[]) => {
+    const file = acceptedFiles[0];
+    if (!file) {
+      toast({
+        variant: 'destructive',
+        title: 'File upload failed',
+        description: 'Please select a valid file.',
+      });
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => {
+      try {
+        const resumeDataUri = reader.result as string;
+        localStorage.setItem('resumeDataUri', resumeDataUri);
+        localStorage.setItem('resumeFileName', file.name);
+        setResumeFile({ name: file.name });
+        toast({
+          title: 'Resume Uploaded',
+          description: `${file.name} has been saved.`,
+        });
+      } catch (error) {
+        toast({
+          variant: 'destructive',
+          title: 'Upload Failed',
+          description: 'Could not save the resume. Please try again.',
+        });
+      }
+    };
+    reader.onerror = () => {
+      toast({
+        variant: 'destructive',
+        title: 'File Read Error',
+        description: 'Could not read the uploaded file.',
+      });
+    };
+  }, [toast]);
+
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+    onDrop,
+    accept: {
+      'application/pdf': ['.pdf'],
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document': [
+        '.docx',
+      ],
+      'text/plain': ['.txt'],
+    },
+    maxFiles: 1,
+  });
+
+  const handleRemoveResume = () => {
+    localStorage.removeItem('resumeDataUri');
+    localStorage.removeItem('resumeFileName');
+    setResumeFile(null);
+    toast({
+      title: 'Resume Removed',
+      description: 'Your resume has been removed.',
+    });
+  };
+
 
   return (
     <div className="space-y-6">
@@ -74,6 +148,48 @@ export default function SettingsPage() {
           </form>
         </CardContent>
       </Card>
+      
+      <Card>
+        <CardHeader>
+          <CardTitle>Your Resume</CardTitle>
+          <CardDescription>
+            Manage your resume for analysis and career recommendations.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {!resumeFile ? (
+            <div
+            {...getRootProps()}
+            className={`flex flex-col items-center justify-center p-12 border-2 border-dashed rounded-lg cursor-pointer transition-colors ${
+              isDragActive
+                ? 'border-primary bg-primary/10'
+                : 'border-border hover:border-primary/50'
+            }`}
+          >
+            <input {...getInputProps()} />
+            <Upload className="w-12 h-12 text-muted-foreground" />
+            <p className="mt-4 text-center text-muted-foreground">
+              Upload your resume here
+            </p>
+            <p className="text-sm text-muted-foreground mt-1">
+              (PDF, DOCX, TXT)
+            </p>
+          </div>
+          ) : (
+            <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
+              <div className="flex items-center gap-3 font-medium">
+                <File className="h-5 w-5 text-primary" />
+                <span>{resumeFile.name}</span>
+              </div>
+              <Button variant="ghost" size="icon" onClick={handleRemoveResume}>
+                <X className="h-5 w-5" />
+                <span className="sr-only">Remove resume</span>
+              </Button>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card>
           <CardHeader>
