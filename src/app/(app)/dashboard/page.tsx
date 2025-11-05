@@ -39,7 +39,7 @@ export default function DashboardPage() {
 
       <Card className="col-span-1 md:col-span-2 lg:col-span-3">
         <CardHeader>
-          <CardTitle className="text-primary">Get Started</CardTitle>
+          <CardTitle className="text-accent">Get Started</CardTitle>
           <CardDescription>
             Begin by analyzing your resume or talking to your AI mentor.
           </CardDescription>

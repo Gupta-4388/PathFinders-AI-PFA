@@ -36,7 +36,7 @@ export default function ResumeAnalysis({ analysis }: ResumeAnalysisProps) {
       <div className="lg:col-span-2 space-y-6">
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+            <CardTitle className="flex items-center gap-2 text-accent">
               <Activity />
               Skill Summary
             </CardTitle>
@@ -48,7 +48,7 @@ export default function ResumeAnalysis({ analysis }: ResumeAnalysisProps) {
 
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+            <CardTitle className="flex items-center gap-2 text-accent">
               <Lightbulb />
               Improvement Insights
             </CardTitle>
@@ -73,7 +73,7 @@ export default function ResumeAnalysis({ analysis }: ResumeAnalysisProps) {
       <div className="space-y-6">
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+            <CardTitle className="flex items-center gap-2 text-accent">
               <Award />
               Extracted Skills
             </CardTitle>
@@ -89,7 +89,7 @@ export default function ResumeAnalysis({ analysis }: ResumeAnalysisProps) {
 
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+            <CardTitle className="flex items-center gap-2 text-accent">
               <Briefcase />
               Suggested Roles
             </CardTitle>
