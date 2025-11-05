@@ -16,7 +16,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { ThemeToggle } from '@/components/settings/theme-toggle';
-import { File, LogOut, Upload, X } from 'lucide-react';
+import { File as FileIcon, LogOut, Upload, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useUser, useFirestore, useMemoFirebase } from '@/firebase';
 import { doc } from 'firebase/firestore';
@@ -268,7 +268,7 @@ export default function SettingsPage() {
           ) : (
             <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
               <div className="flex items-center gap-3 font-medium">
-                <File className="h-5 w-5 text-primary" />
+                <FileIcon className="h-5 w-5 text-primary" />
                 <span>{resumeFile.name}</span>
               </div>
               <Button variant="ghost" size="icon" onClick={handleRemoveResume}>

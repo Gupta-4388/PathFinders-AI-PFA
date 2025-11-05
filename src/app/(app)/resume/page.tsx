@@ -2,7 +2,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Upload, File, Loader2, X } from 'lucide-react';
+import { Upload, File as FileIcon, Loader2, X } from 'lucide-react';
 import { useDropzone } from 'react-dropzone';
 import * as React from 'react';
 
@@ -163,7 +163,7 @@ export default function ResumePage() {
           {file && (
             <div className="mt-6 flex items-center justify-between p-3 bg-muted/50 rounded-lg animate-fade-in">
               <div className="flex items-center gap-3">
-                <File className="w-6 h-6 text-primary" />
+                <FileIcon className="w-6 h-6 text-primary" />
                 <span className="font-medium truncate">{file.name}</span>
               </div>
               <Button
