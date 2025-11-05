@@ -35,6 +35,7 @@ const careerPaths = [
     salaryRange: '$130k - $190k',
     skills: ['Python', 'TensorFlow', 'PyTorch', 'Scikit-learn', 'NLP'],
     progress: 75,
+    roadmapUrl: 'https://www.coursera.org/professional-certificates/google-ai-essentials',
   },
   {
     title: 'Full-Stack Developer',
@@ -44,6 +45,7 @@ const careerPaths = [
     salaryRange: '$110k - $160k',
     skills: ['JavaScript', 'React', 'Node.js', 'SQL', 'APIs'],
     progress: 60,
+    roadmapUrl: 'https://www.coursera.org/professional-certificates/meta-front-end-developer',
   },
   {
     title: 'Cloud & DevOps Engineer',
@@ -52,6 +54,7 @@ const careerPaths = [
     salaryRange: '$120k - $175k',
     skills: ['AWS/GCP/Azure', 'Docker', 'Kubernetes', 'CI/CD', 'Terraform'],
     progress: 40,
+    roadmapUrl: 'https://www.coursera.org/professional-certificates/google-devops',
   },
 ];
 
@@ -201,8 +204,10 @@ export default function DashboardPage() {
           <CardFooter className="flex-col items-start gap-2">
             <p className="text-xs text-muted-foreground">Your Skill Match</p>
             <Progress value={path.progress} className="w-full h-2" />
-            <Button variant="link" size="sm" className="px-0" disabled>
-              View Full Roadmap <ArrowRight className="w-4 h-4 ml-1" />
+            <Button asChild variant="link" size="sm" className="px-0">
+              <Link href={path.roadmapUrl} target="_blank" rel="noopener noreferrer">
+                View Full Roadmap <ArrowRight className="w-4 h-4 ml-1" />
+              </Link>
             </Button>
           </CardFooter>
         </Card>
