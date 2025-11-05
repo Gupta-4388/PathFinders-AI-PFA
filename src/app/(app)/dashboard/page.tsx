@@ -10,14 +10,6 @@ import {
   TrendingUp,
 } from 'lucide-react';
 import Link from 'next/link';
-import {
-  Bar,
-  BarChart,
-  CartesianGrid,
-  ResponsiveContainer,
-  XAxis,
-  YAxis,
-} from 'recharts';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -29,28 +21,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import {
-  ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
-} from '@/components/ui/chart';
 import { Progress } from '@/components/ui/progress';
-
-const chartData = [
-  { month: 'January', desktop: 186 },
-  { month: 'February', desktop: 305 },
-  { month: 'March', desktop: 237 },
-  { month: 'April', desktop: 73 },
-  { month: 'May', desktop: 209 },
-  { month: 'June', desktop: 214 },
-];
-
-const chartConfig = {
-  desktop: {
-    label: 'Desktop',
-    color: 'hsl(var(--chart-1))',
-  },
-};
 
 const careerPaths = [
   {
@@ -132,45 +103,14 @@ export default function DashboardPage() {
         </CardContent>
       </Card>
 
-      <Card className="col-span-1 lg:col-span-2">
-        <CardHeader>
-          <CardTitle>Job Market Trends</CardTitle>
-          <CardDescription>
-            Demand for your skills in the last 6 months.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <ChartContainer config={chartConfig} className="min-h-64 w-full">
-            <ResponsiveContainer width="100%" height={250}>
-              <BarChart data={chartData}>
-                <CartesianGrid vertical={false} />
-                <XAxis
-                  dataKey="month"
-                  tickLine={false}
-                  tickMargin={10}
-                  axisLine={false}
-                  tickFormatter={(value) => value.slice(0, 3)}
-                />
-                <YAxis />
-                <ChartTooltip
-                  cursor={false}
-                  content={<ChartTooltipContent />}
-                />
-                <Bar dataKey="desktop" fill="var(--color-desktop)" radius={4} />
-              </BarChart>
-            </ResponsiveContainer>
-          </ChartContainer>
-        </CardContent>
-      </Card>
-
-      <Card className="col-span-1">
+      <Card className="col-span-1 md:col-span-2 lg:col-span-3">
         <CardHeader>
           <CardTitle>Next Steps</CardTitle>
           <CardDescription>
             Actions to accelerate your career growth.
           </CardDescription>
         </CardHeader>
-        <CardContent className="grid gap-4">
+        <CardContent className="grid md:grid-cols-3 gap-4">
           <Link
             href="/resume"
             className="flex items-center gap-4 p-4 rounded-lg hover:bg-muted transition-colors"
