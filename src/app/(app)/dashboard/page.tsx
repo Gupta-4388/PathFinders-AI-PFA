@@ -14,7 +14,9 @@ import Link from 'next/link';
 
 import {
   RecommendCareerPathsOutput,
+  recommendCareerPaths,
 } from '@/ai/flows/recommend-career-paths-flow';
+import { analyzeResume } from '@/ai/flows/analyze-resume-flow';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -24,19 +26,56 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
+import { useToast } from '@/hooks/use-toast';
 
 export default function DashboardPage() {
   const [recommendedPaths, setRecommendedPaths] =
     useState<RecommendCareerPathsOutput | null>(null);
   const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
 
   useEffect(() => {
-    const data = localStorage.getItem('recommendedCareerPaths');
-    if (data) {
-      setRecommendedPaths(JSON.parse(data));
-    }
-    setLoading(false);
-  }, []);
+    const fetchRecommendations = async () => {
+      setLoading(true);
+      
+      // Check for existing recommendations
+      const existingData = localStorage.getItem('recommendedCareerPaths');
+      if (existingData) {
+        setRecommendedPaths(JSON.parse(existingData));
+        setLoading(false);
+        return;
+      }
+
+      // If no recommendations, check for resume and generate them
+      const resumeDataUri = localStorage.getItem('resumeDataUri');
+      if (resumeDataUri) {
+        try {
+          const analysisResult = await analyzeResume({ resumeDataUri });
+
+          if (analysisResult.extractedSkills.length > 0) {
+            const careerPathResult = await recommendCareerPaths({
+              skills: analysisResult.extractedSkills,
+            });
+            localStorage.setItem(
+              'recommendedCareerPaths',
+              JSON.stringify(careerPathResult)
+            );
+            setRecommendedPaths(careerPathResult);
+          }
+        } catch (error) {
+          console.error('Failed to generate career paths:', error);
+          toast({
+            variant: 'destructive',
+            title: 'Analysis Failed',
+            description: 'Could not generate career recommendations from your resume.',
+          });
+        }
+      }
+      setLoading(false);
+    };
+
+    fetchRecommendations();
+  }, [toast]);
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -111,7 +150,7 @@ export default function DashboardPage() {
           <CardTitle className="text-accent">Recommended Career Paths</CardTitle>
           <CardDescription>
             Based on your resume, here are some career paths you could excel in.
-            Upload your resume to see recommendations.
+            Upload your resume in settings to see recommendations.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -151,10 +190,11 @@ export default function DashboardPage() {
             <div className="text-center py-8 text-muted-foreground">
               <p>No career paths recommended yet.</p>
               <p>
-                <Link href="/resume" className="text-primary hover:underline">
-                  Analyze your resume
+                Go to{' '}
+                <Link href="/settings" className="text-primary hover:underline">
+                  Settings
                 </Link>{' '}
-                to get started.
+                to upload your resume and get started.
               </p>
             </div>
           )}
