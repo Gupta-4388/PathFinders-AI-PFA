@@ -75,7 +75,6 @@ export default function ResumePage() {
     reader.onload = async () => {
       try {
         const resumeDataUri = reader.result as string;
-        setDocumentNonBlocking(userDocRef, { resumeDataUri, resumeFileName: fileToAnalyze.name }, { merge: true });
 
         const analysisResult = await analyzeResume({ resumeDataUri });
         setAnalysis(analysisResult);
