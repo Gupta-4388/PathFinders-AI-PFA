@@ -66,7 +66,7 @@ export default function MentorPage() {
     <div className="h-full flex flex-col">
       <Card className="flex-grow flex flex-col">
         <CardHeader>
-          <CardTitle>AI Mentor</CardTitle>
+          <CardTitle className="text-accent">AI Mentor</CardTitle>
           <CardDescription>
             Your personal AI career coach. Ask me anything about your career path.
           </CardDescription>

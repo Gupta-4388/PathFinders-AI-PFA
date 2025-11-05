@@ -172,7 +172,7 @@ export default function ResumePage() {
         <div className="lg:col-span-2 space-y-6">
            <Card>
             <CardHeader>
-                <CardTitle>Analyze Your Resume</CardTitle>
+                <CardTitle className="text-accent">Analyze Your Resume</CardTitle>
                 <CardDescription>Upload your resume (PDF, DOCX, or TXT) to get started.</CardDescription>
             </CardHeader>
             <CardContent>
@@ -238,7 +238,7 @@ export default function ResumePage() {
                     <div className="space-y-6 animate-in fade-in-50 duration-500">
                       <Card>
                           <CardHeader>
-                          <CardTitle className="flex items-center gap-2">
+                          <CardTitle className="flex items-center gap-2 text-accent">
                               <Briefcase className="h-5 w-5 text-accent" />
                               Suggested Roles
                           </CardTitle>
@@ -263,7 +263,7 @@ export default function ResumePage() {
 
                       <Card>
                           <CardHeader>
-                          <CardTitle className="flex items-center gap-2">
+                          <CardTitle className="flex items-center gap-2 text-accent">
                               <Lightbulb className="h-5 w-5 text-yellow-400" />
                               Improvement Insights
                           </CardTitle>
@@ -279,7 +279,7 @@ export default function ResumePage() {
 
                       <Card>
                           <CardHeader>
-                          <CardTitle>Skill Summary</CardTitle>
+                          <CardTitle className="text-accent">Skill Summary</CardTitle>
                           </CardHeader>
                           <CardContent>
                           <p className="text-sm text-muted-foreground">
@@ -304,7 +304,7 @@ export default function ResumePage() {
         <div className="lg:col-span-1">
             <Card>
                 <CardHeader className="items-center pb-0">
-                    <CardTitle className='flex items-center gap-2'><TrendingUp /> Skill Demand</CardTitle>
+                    <CardTitle className='flex items-center gap-2 text-accent'><TrendingUp /> Skill Demand</CardTitle>
                     <CardDescription>
                       {analysis ? "Demand for your top skills" : "A look at top trending skills"}
                     </CardDescription>

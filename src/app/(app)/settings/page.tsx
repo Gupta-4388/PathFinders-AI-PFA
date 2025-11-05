@@ -68,7 +68,7 @@ export default function SettingsPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Profile</CardTitle>
+          <CardTitle className="text-accent">Profile</CardTitle>
           <CardDescription>
             This is how others will see you on the site.
           </CardDescription>
@@ -99,7 +99,7 @@ export default function SettingsPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Security</CardTitle>
+          <CardTitle className="text-accent">Security</CardTitle>
           <CardDescription>
             Change your password here.
           </CardDescription>
@@ -125,7 +125,7 @@ export default function SettingsPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Appearance</CardTitle>
+          <CardTitle className="text-accent">Appearance</CardTitle>
           <CardDescription>
             Customize the look and feel of the application.
           </CardDescription>
@@ -151,7 +151,7 @@ export default function SettingsPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Account</CardTitle>
+          <CardTitle className="text-accent">Account</CardTitle>
           <CardDescription>
             Manage your account settings.
           </CardDescription>

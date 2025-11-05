@@ -76,7 +76,7 @@ export default function DashboardPage() {
 
       <Card className="col-span-1 md:col-span-2 lg:col-span-3">
         <CardHeader>
-          <CardTitle>Next Steps</CardTitle>
+          <CardTitle className="text-accent">Next Steps</CardTitle>
           <CardDescription>
             Actions to accelerate your career growth.
           </CardDescription>
@@ -159,7 +159,7 @@ export default function DashboardPage() {
         <Card key={index} className="flex flex-col lg:col-span-1">
           <CardHeader>
             <div className="flex justify-between items-start">
-              <CardTitle>{path.title}</CardTitle>
+              <CardTitle className="text-accent">{path.title}</CardTitle>
               <Badge
                 variant="secondary"
                 className="bg-yellow-800/20 text-yellow-400 border-none"
