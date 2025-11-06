@@ -291,7 +291,7 @@ export default function SettingsPage() {
                 <ThemeToggle />
               </CardContent>
             </Card>
-            <Card className="transition-transform transform hover:scale-105">
+            <Card className="transition-transform transform hover:scale-105 block lg:hidden">
                 <CardHeader>
                     <CardTitle>Sign Out</CardTitle>
                     <CardDescription>
@@ -306,32 +306,50 @@ export default function SettingsPage() {
                 </CardContent>
             </Card>
         </div>
-        <Card className="transition-transform transform hover:scale-105">
-          <CardHeader>
-            <CardTitle>Change Password</CardTitle>
-            <CardDescription>
-              Update your password here. Choose a strong password.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handlePasswordSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="current-password">Current Password</Label>
-                <Input id="current-password" type="password" />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="new-password">New Password</Label>
-                <Input id="new-password" type="password" />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="confirm-password">Confirm New Password</Label>
-                <Input id="confirm-password" type="password" />
-              </div>
-              <Button type="submit">Update Password</Button>
-            </form>
-          </CardContent>
-        </Card>
+        <div className="space-y-6">
+            <Card className="transition-transform transform hover:scale-105">
+                <CardHeader>
+                    <CardTitle>Change Password</CardTitle>
+                    <CardDescription>
+                    Update your password here. Choose a strong password.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <form onSubmit={handlePasswordSubmit} className="space-y-4">
+                    <div className="space-y-2">
+                        <Label htmlFor="current-password">Current Password</Label>
+                        <Input id="current-password" type="password" />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="new-password">New Password</Label>
+                        <Input id="new-password" type="password" />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="confirm-password">Confirm New Password</Label>
+                        <Input id="confirm-password" type="password" />
+                    </div>
+                    <Button type="submit">Update Password</Button>
+                    </form>
+                </CardContent>
+            </Card>
+            <Card className="transition-transform transform hover:scale-105 hidden lg:block">
+                <CardHeader>
+                    <CardTitle>Sign Out</CardTitle>
+                    <CardDescription>
+                    You will be returned to the login screen.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <Button variant="outline" onClick={handleSignOut}>
+                    <LogOut className="mr-2 h-4 w-4" />
+                    Sign Out
+                    </Button>
+                </CardContent>
+            </Card>
+        </div>
       </div>
     </div>
   );
 }
+
+    
