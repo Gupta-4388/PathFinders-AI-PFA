@@ -28,7 +28,7 @@ const RecommendedChannelSchema = z.object({
   channelLink: z
     .string()
     .url()
-    .describe('The URL link to the YouTube channel.'),
+    .describe('The valid, working URL link to the YouTube channel.'),
   description: z
     .string()
     .describe(
@@ -69,7 +69,7 @@ User Query Topic: {{{topic}}}
 
 For each channel, you must provide:
 1.  **Channel Name**: The official name of the channel.
-2.  **Channel Link**: The full URL to the channel's main page.
+2.  **Channel Link**: The full, valid, and working URL to the channel's main page.
 3.  **Short Description**: Describe the channel's style, teaching approach, and the primary audience level (beginner, intermediate, advanced).
 4.  **Why it’s recommended**: Explain why this channel is a great resource for the user's topic.
 5.  **Example of recent or popular videos**: List a few relevant video titles.

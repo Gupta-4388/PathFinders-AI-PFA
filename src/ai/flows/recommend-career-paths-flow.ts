@@ -23,7 +23,7 @@ const CareerPathSchema = z.object({
   salaryRange: z.string().describe('An estimated annual salary range, e.g., "$110k - $160k".'),
   skills: z.array(z.string()).describe('A list of 5 key skills required for this path.'),
   progress: z.number().describe('A number from 0-100 representing the user\'s skill match for this path.'),
-  roadmapUrl: z.string().url().describe('A URL to a learning resource or roadmap.'),
+  roadmapUrl: z.string().url().describe('A valid, working URL to a learning resource or roadmap.'),
 });
 
 const RecommendCareerPathsOutputSchema = z.object({
@@ -46,7 +46,7 @@ const recommendCareerPathsPrompt = ai.definePrompt({
 User Skills:
 {{#each skills}}- {{{this}}}{{/each}}
 
-For each path, provide a title, description, demand score (1-10), estimated salary range, a list of 5 key skills, the user's skill match percentage, and a relevant roadmap URL from a free and readily accessible learning platform. Prioritize resources like Coursera's free courses, edX, freeCodeCamp, or official documentation.`,
+For each path, provide a title, description, demand score (1-10), estimated salary range, a list of 5 key skills, the user's skill match percentage, and a relevant, valid, and working roadmap URL from a free and readily accessible learning platform. Prioritize resources like Coursera's free courses, edX, freeCodeCamp, or official documentation.`,
 });
 
 const recommendCareerPathsFlow = ai.defineFlow(
