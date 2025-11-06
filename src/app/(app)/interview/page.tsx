@@ -392,7 +392,6 @@ export default function InterviewPage() {
                     ref={videoRef}
                     className="w-full aspect-video rounded-md"
                     autoPlay
-                    muted
                     playsInline
                   />
                 ) : (
