@@ -49,7 +49,7 @@ export default function Home() {
             <div className="blur-[106px] h-56 bg-gradient-to-br from-primary to-green-500"></div>
             <div className="blur-[106px] h-32 bg-gradient-to-r from-green-400 to-cyan-400"></div>
           </div>
-          <div className="relative container mx-auto px-4 sm:px-6 lg:px-8 text-center animate-fade-in-up">
+          <div className="relative container mx-auto px-4 sm:px-6 lg:px-8 text-center">
             <div className="max-w-3xl mx-auto">
               <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-foreground to-gray-400 leading-tight">
                 Your Career, Amplified by AI
@@ -79,7 +79,7 @@ export default function Home() {
 
         <section id="features" className="py-20 md:py-28 bg-card/50">
           <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-12 animate-fade-in-up">
+            <div className="text-center mb-12">
               <h2 className="text-3xl md:text-4xl font-bold">An Entire Career Toolkit</h2>
               <p className="mt-4 text-muted-foreground max-w-2xl mx-auto">
                 From resume to interview, PathFinder AI provides the tools you need to succeed in today's competitive job market.
@@ -130,7 +130,7 @@ export default function Home() {
 }
 
 const FeatureCard = ({ icon, title, description }: { icon: React.ReactNode, title: string, description: string }) => (
-  <div className="p-8 bg-card rounded-lg shadow-sm border border-transparent text-left transform transition-all duration-300 hover:scale-105 hover:shadow-lg hover:border-accent group animate-fade-in-up">
+  <div className="p-8 bg-card rounded-lg shadow-sm border border-transparent text-left transform transition-all duration-300 hover:scale-105 hover:shadow-lg hover:border-accent group">
     <div className="mb-4 text-accent transition-colors duration-300 group-hover:text-primary">{icon}</div>
     <h3 className="text-xl font-bold mb-2">{title}</h3>
     <p className="text-muted-foreground">{description}</p>
