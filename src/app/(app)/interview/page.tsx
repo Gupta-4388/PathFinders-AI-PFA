@@ -65,7 +65,6 @@ export default function InterviewPage() {
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const recognitionRef = useRef<SpeechRecognition | null>(null);
-  const finalTranscriptRef = useRef('');
 
 
   const { toast } = useToast();
@@ -89,7 +88,6 @@ export default function InterviewPage() {
 
           if (videoRef.current) {
             videoRef.current.srcObject = stream;
-            videoRef.current.play();
           }
         } catch (error) {
           console.error('Error accessing camera:', error);
@@ -111,19 +109,19 @@ export default function InterviewPage() {
       recognitionRef.current = new SpeechRecognition();
       recognitionRef.current.continuous = true;
       recognitionRef.current.interimResults = true;
+      let finalTranscript = '';
 
       recognitionRef.current.onresult = (event) => {
         let interimTranscript = '';
-        let finalTranscript = '';
-        for (let i = event.resultIndex; i < event.results.length; ++i) {
+        finalTranscript = '';
+        for (let i = 0; i < event.results.length; ++i) {
           if (event.results[i].isFinal) {
             finalTranscript += event.results[i][0].transcript;
           } else {
             interimTranscript += event.results[i][0].transcript;
           }
         }
-        finalTranscriptRef.current = finalTranscript;
-        setUserAnswer(finalTranscriptRef.current + interimTranscript);
+        setUserAnswer(finalTranscript + interimTranscript);
       };
 
       recognitionRef.current.onend = () => {
@@ -190,7 +188,6 @@ export default function InterviewPage() {
       recognitionRef.current?.stop();
     } else {
       setUserAnswer('');
-      finalTranscriptRef.current = '';
       recognitionRef.current?.start();
     }
     setIsRecording(!isRecording);
@@ -251,7 +248,7 @@ export default function InterviewPage() {
 
   if (!interviewStarted) {
     return (
-      <div className="flex justify-center items-center h-full animate-fade-in p-4 sm:p-0">
+      <div className="flex justify-center items-center h-full animate-pop-in p-4 sm:p-0">
         <Card className="w-full max-w-md transition-transform transform hover:scale-105">
           <CardHeader>
             <CardTitle>Mock Interview Simulator</CardTitle>
@@ -399,6 +396,7 @@ export default function InterviewPage() {
                     className="w-full aspect-video rounded-md"
                     autoPlay
                     playsInline
+                    muted
                   />
                 ) : (
                   <Alert variant="destructive">
