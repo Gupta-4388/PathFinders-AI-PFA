@@ -114,13 +114,15 @@ export default function InterviewPage() {
 
       recognitionRef.current.onresult = (event) => {
         let interimTranscript = '';
+        let finalTranscript = '';
         for (let i = event.resultIndex; i < event.results.length; ++i) {
           if (event.results[i].isFinal) {
-            finalTranscriptRef.current += event.results[i][0].transcript;
+            finalTranscript += event.results[i][0].transcript;
           } else {
             interimTranscript += event.results[i][0].transcript;
           }
         }
+        finalTranscriptRef.current = finalTranscript;
         setUserAnswer(finalTranscriptRef.current + interimTranscript);
       };
 
@@ -397,7 +399,6 @@ export default function InterviewPage() {
                     className="w-full aspect-video rounded-md"
                     autoPlay
                     playsInline
-                    muted 
                   />
                 ) : (
                   <Alert variant="destructive">
