@@ -88,6 +88,7 @@ export default function InterviewPage() {
 
           if (videoRef.current) {
             videoRef.current.srcObject = stream;
+            videoRef.current.play();
           }
         } catch (error) {
           console.error('Error accessing camera:', error);
