@@ -10,6 +10,9 @@ import { Eye, EyeOff } from 'lucide-react';
 import {
   signInWithPopup,
   GoogleAuthProvider,
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  AuthError,
 } from 'firebase/auth';
 
 import { Button } from '@/components/ui/button';
@@ -35,10 +38,6 @@ import {
 import { Separator } from './ui/separator';
 import Link from 'next/link';
 import { useAuth } from '@/firebase';
-import {
-  initiateEmailSignIn,
-  initiateEmailSignUp,
-} from '@/firebase/non-blocking-login';
 
 const signInSchema = z.object({
   email: z.string().email({ message: 'Please enter a valid email.' }),
@@ -79,22 +78,67 @@ export function AuthForm() {
     defaultValues: { name: '', email: '', password: '' },
   });
 
-  const onSignInSubmit = (values: z.infer<typeof signInSchema>) => {
-    initiateEmailSignIn(auth, values.email, values.password);
+  const handleAuthError = (error: AuthError) => {
+    let title = 'Authentication Failed';
+    let description = 'An unexpected error occurred. Please try again.';
+
+    switch (error.code) {
+      case 'auth/user-not-found':
+      case 'auth/wrong-password':
+      case 'auth/invalid-credential':
+        title = 'Invalid Credentials';
+        description = 'The email or password you entered is incorrect.';
+        break;
+      case 'auth/email-already-in-use':
+        title = 'Email Already in Use';
+        description =
+          'This email address is already associated with an account.';
+        break;
+      case 'auth/weak-password':
+        title = 'Weak Password';
+        description = 'The password must be at least 6 characters long.';
+        break;
+      case 'auth/invalid-email':
+        title = 'Invalid Email';
+        description = 'Please enter a valid email address.';
+        break;
+    }
+
     toast({
-      title: 'Signed In',
-      description: 'Welcome back! You have been successfully signed in.',
+      variant: 'destructive',
+      title: title,
+      description: description,
     });
-    router.push('/dashboard');
   };
 
-  const onSignUpSubmit = (values: z.infer<typeof signUpSchema>) => {
-    initiateEmailSignUp(auth, values.email, values.password);
-    toast({
-      title: 'Account Created',
-      description: 'Welcome! Your account has been created successfully.',
-    });
-    router.push('/dashboard');
+  const onSignInSubmit = async (values: z.infer<typeof signInSchema>) => {
+    try {
+      await signInWithEmailAndPassword(auth, values.email, values.password);
+      toast({
+        title: 'Signed In',
+        description: 'Welcome back! You have been successfully signed in.',
+      });
+      router.push('/dashboard');
+    } catch (error) {
+      handleAuthError(error as AuthError);
+    }
+  };
+
+  const onSignUpSubmit = async (values: z.infer<typeof signUpSchema>) => {
+    try {
+      await createUserWithEmailAndPassword(
+        auth,
+        values.email,
+        values.password
+      );
+      toast({
+        title: 'Account Created',
+        description: 'Welcome! Your account has been created successfully.',
+      });
+      router.push('/dashboard');
+    } catch (error) {
+      handleAuthError(error as AuthError);
+    }
   };
 
   const handleGoogleSignIn = async () => {
@@ -190,8 +234,8 @@ export function AuthForm() {
                     </FormItem>
                   )}
                 />
-                <Button type="submit" className="w-full">
-                  Sign In
+                <Button type="submit" className="w-full" disabled={signInForm.formState.isSubmitting}>
+                  {signInForm.formState.isSubmitting ? 'Signing In...' : 'Sign In'}
                 </Button>
               </form>
             </Form>
@@ -262,8 +306,8 @@ export function AuthForm() {
                     </FormItem>
                   )}
                 />
-                <Button type="submit" className="w-full">
-                  Sign Up
+                <Button type="submit" className="w-full" disabled={signUpForm.formState.isSubmitting}>
+                   {signUpForm.formState.isSubmitting ? 'Signing Up...' : 'Sign Up'}
                 </Button>
               </form>
             </Form>
