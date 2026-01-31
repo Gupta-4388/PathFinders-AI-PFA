@@ -102,6 +102,11 @@ export function AuthForm() {
         title = 'Invalid Email';
         description = 'Please enter a valid email address.';
         break;
+      case 'auth/operation-not-allowed':
+        title = 'Sign-In Method Disabled';
+        description =
+          'This sign-in method is disabled. Please enable it in your Firebase project authentication settings.';
+        break;
     }
 
     toast({
@@ -152,11 +157,7 @@ export function AuthForm() {
       router.push('/dashboard');
     } catch (error) {
       console.error('Google Sign-In Error:', error);
-      toast({
-        variant: 'destructive',
-        title: 'Sign-In Failed',
-        description: 'Could not sign in with Google. Please try again.',
-      });
+      handleAuthError(error as AuthError);
     }
   };
 
