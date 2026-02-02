@@ -17,15 +17,9 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import ResumeAnalysis from '@/components/dashboard/resume-analysis';
-import { useDoc, useFirestore, useUser, useMemoFirebase } from '@/firebase';
+import { useFirestore, useUser, useMemoFirebase } from '@/firebase';
 import { setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { doc } from 'firebase/firestore';
-
-
-type UserProfile = {
-  resumeDataUri?: string;
-  resumeFileName?: string;
-};
 
 export default function ResumePage() {
   const [analysis, setAnalysis] = useState<AnalyzeResumeOutput | null>(null);
@@ -39,7 +33,6 @@ export default function ResumePage() {
     () => (user ? doc(firestore, 'users', user.uid) : null),
     [user, firestore]
   );
-  const { data: userProfile } = useDoc<UserProfile>(userDocRef);
 
 
   const onDrop = async (acceptedFiles: File[]) => {
@@ -126,16 +119,6 @@ export default function ResumePage() {
     }
   };
   
-  React.useEffect(() => {
-    if (userProfile?.resumeFileName && !file) {
-      setFile(new File([], userProfile.resumeFileName));
-    }
-    if (!userProfile?.resumeFileName && file) {
-      setFile(null)
-    }
-  }, [userProfile, file]);
-
-
   return (
     <div className="space-y-6 animate-fade-in">
       <Card className="transition-transform transform hover:scale-105">
