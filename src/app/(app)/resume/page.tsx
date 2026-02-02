@@ -17,23 +17,12 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import ResumeAnalysis from '@/components/dashboard/resume-analysis';
-import { useFirestore, useUser, useMemoFirebase } from '@/firebase';
-import { setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
-import { doc } from 'firebase/firestore';
 
 export default function ResumePage() {
   const [analysis, setAnalysis] = useState<AnalyzeResumeOutput | null>(null);
   const [loading, setLoading] = useState(false);
   const [file, setFile] = useState<File | null>(null);
   const { toast } = useToast();
-  const { user } = useUser();
-  const firestore = useFirestore();
-
-  const userDocRef = useMemoFirebase(
-    () => (user ? doc(firestore, 'users', user.uid) : null),
-    [user, firestore]
-  );
-
 
   const onDrop = async (acceptedFiles: File[]) => {
     const uploadedFile = acceptedFiles[0];
@@ -62,11 +51,6 @@ export default function ResumePage() {
 
         const analysisResult = await analyzeResume({ resumeDataUri });
         setAnalysis(analysisResult);
-
-        if (userDocRef) {
-          setDocumentNonBlocking(userDocRef, { resumeDataUri, resumeFileName: fileToAnalyze.name }, { merge: true });
-        }
-
 
         if (analysisResult.extractedSkills.length > 0) {
           const careerPathResult = await recommendCareerPaths({
@@ -114,9 +98,6 @@ export default function ResumePage() {
   const handleRemoveFile = () => {
     setFile(null);
     setAnalysis(null);
-    if (userDocRef) {
-      setDocumentNonBlocking(userDocRef, { resumeDataUri: null, resumeFileName: null }, { merge: true });
-    }
   };
   
   return (
