@@ -201,7 +201,6 @@ export default function InterviewPage() {
       return;
     }
     setLoading(true);
-    setAnalysis(null);
     try {
       const analysisResult = await analyzeInterviewAnswer({
         question: currentQuestion,
@@ -338,147 +337,153 @@ export default function InterviewPage() {
   }
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 h-full animate-fade-in-up">
-      <div className="flex flex-col gap-4">
-        <Card className="flex-grow transition-transform transform hover:scale-[1.02]">
-          <CardHeader>
-            <CardTitle>Interview Question</CardTitle>
-          </CardHeader>
-          <CardContent className="text-lg font-semibold min-h-[100px]">
-            {loading && !currentQuestion ? (
-              <Loader2 className="animate-spin" />
-            ) : (
-              currentQuestion
-            )}
-          </CardContent>
-        </Card>
+    <div className="w-full max-w-4xl mx-auto flex flex-col gap-6 animate-fade-in-up">
+      <Card className="transition-all duration-300 transform hover:scale-[1.01] border border-transparent hover:border-primary/50">
+        <CardHeader>
+          <CardTitle className="text-xl font-semibold">Interview Question</CardTitle>
+        </CardHeader>
+        <CardContent className="text-base text-muted-foreground min-h-[80px] flex items-center">
+          {loading && !currentQuestion ? (
+            <Loader2 className="w-6 h-6 animate-spin text-primary" />
+          ) : (
+            <p>{currentQuestion}</p>
+          )}
+        </CardContent>
+      </Card>
+
+      <div className="flex-grow">
         {analysis ? (
-          <Card className="animate-fade-in">
+          <Card className="animate-pop-in transition-all duration-300 transform hover:scale-[1.01] border border-transparent hover:border-primary/50">
             <CardHeader>
               <CardTitle>AI Feedback</CardTitle>
               <CardDescription>
-                Overall Score:
-                <Badge className="ml-2 text-lg">{analysis.score}%</Badge>
+                Overall Score:{' '}
+                <Badge
+                  className={cn(
+                    'ml-2 text-lg',
+                    analysis.score > 80
+                      ? 'bg-green-500/20 text-green-400 border-green-500/30'
+                      : analysis.score > 60
+                      ? 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30'
+                      : 'bg-red-500/20 text-red-400 border-red-500/30'
+                  )}
+                >
+                  {analysis.score}%
+                </Badge>
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <h4 className="font-semibold">Clarity:</h4>
-                <p className="text-muted-foreground">
-                  {analysis.analysis?.clarity}
-                </p>
+            <CardContent className="space-y-6">
+              <div className="space-y-2">
+                <h4 className="font-semibold text-primary">Clarity:</h4>
+                <p className="text-muted-foreground">{analysis.analysis?.clarity}</p>
               </div>
-              <div>
-                <h4 className="font-semibold">Content:</h4>
-                <p className="text-muted-foreground">
-                  {analysis.analysis?.content}
-                </p>
+              <div className="space-y-2">
+                <h4 className="font-semibold text-primary">Content:</h4>
+                <p className="text-muted-foreground">{analysis.analysis?.content}</p>
               </div>
-              <div>
-                <h4 className="font-semibold">Improvement Tips:</h4>
-                <p className="text-muted-foreground">
-                  {analysis.improvementTips}
-                </p>
+              <div className="space-y-2">
+                <h4 className="font-semibold text-primary">Improvement Tips:</h4>
+                <p className="text-muted-foreground">{analysis.improvementTips}</p>
               </div>
-              <Button onClick={nextQuestion} className="w-full">
+              <Button onClick={nextQuestion} className="w-full h-11 text-base">
                 Next Question <RefreshCcw className="ml-2" />
               </Button>
             </CardContent>
           </Card>
         ) : (
-          <div className="flex items-center justify-center text-muted-foreground h-full">
-            <p>
-              {loading && analysis === null
-                ? 'Analyzing your answer...'
-                : 'Your feedback will appear here.'}
-            </p>
-          </div>
-        )}
-      </div>
-
-      <div className="flex flex-col gap-4">
-        {interviewMode === 'video' ? (
-          <Card className="flex-grow transition-transform transform hover:scale-[1.02]">
-            <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle>Your Camera</CardTitle>
-              <Badge variant={hasCameraPermission ? 'default' : 'destructive'}>
-                {hasCameraPermission ? (
-                  <Video className="mr-2" />
-                ) : (
-                  <VideoOff className="mr-2" />
-                )}
-                {hasCameraPermission ? 'Camera On' : 'No Camera'}
-              </Badge>
+          <Card className="flex flex-col flex-grow transition-all duration-300 transform hover:scale-[1.01] border border-transparent hover:border-primary/50">
+            <CardHeader>
+              <CardTitle>Your Answer</CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="aspect-video bg-muted rounded-md flex items-center justify-center">
-                {hasCameraPermission ? (
+            <CardContent className="flex-grow flex flex-col gap-4">
+              {interviewMode === 'video' && (
+                <div className="aspect-video bg-muted rounded-md flex items-center justify-center relative overflow-hidden">
                   <video
                     ref={videoRef}
-                    className="w-full aspect-video rounded-md"
+                    className="w-full h-full object-cover"
                     autoPlay
                     playsInline
                     muted
                   />
+                  {!hasCameraPermission && (
+                    <Alert variant="destructive" className="absolute w-auto m-4">
+                      <VideoOff className="h-4 w-4" />
+                      <AlertTitle>Camera Access Required</AlertTitle>
+                      <AlertDescription>
+                        Please allow camera access to use this feature.
+                      </AlertDescription>
+                    </Alert>
+                  )}
+                </div>
+              )}
+              {interviewMode === 'audio' && (
+                <div className="h-32 flex flex-col items-center justify-center bg-muted rounded-md gap-4">
+                  <Mic
+                    className={cn(
+                      'w-10 h-10 text-muted-foreground transition-colors',
+                      isRecording && 'text-red-500 animate-pulse'
+                    )}
+                  />
+                  <p className="text-sm text-muted-foreground">
+                    {isRecording ? 'Recording your answer...' : 'Get ready to speak'}
+                  </p>
+                </div>
+              )}
+
+              <Textarea
+                placeholder={
+                  interviewMode === 'text'
+                    ? 'Type your answer here...'
+                    : 'Your answer will be transcribed here... or you can type.'
+                }
+                value={userAnswer}
+                onChange={(e) => setUserAnswer(e.target.value)}
+                className="w-full flex-grow min-h-[150px] text-base"
+                disabled={loading}
+              />
+
+              <div className="flex justify-between items-center mt-2">
+                {interviewMode !== 'text' ? (
+                  <Button
+                    onClick={toggleRecording}
+                    variant="outline"
+                    size="lg"
+                    className="h-11"
+                    disabled={loading}
+                  >
+                    {isRecording ? (
+                      <>
+                        <MicOff className="mr-2 text-red-500" /> Stop Recording
+                      </>
+                    ) : (
+                      <>
+                        <Mic className="mr-2" /> Start Recording
+                      </>
+                    )}
+                  </Button>
                 ) : (
-                  <Alert variant="destructive">
-                    <AlertTitle>Camera Access Required</AlertTitle>
-                    <AlertDescription>
-                      Please allow camera access to use this feature.
-                    </AlertDescription>
-                  </Alert>
+                  <div />
                 )}
+                <Button
+                  onClick={submitAnswer}
+                  disabled={loading || !userAnswer.trim()}
+                  size="lg"
+                  className="h-11"
+                >
+                  {loading ? (
+                    <Loader2 className="animate-spin" />
+                  ) : (
+                    <>
+                      Submit Answer <Send className="ml-2" />
+                    </>
+                  )}
+                </Button>
               </div>
             </CardContent>
           </Card>
-        ) : interviewMode === 'audio' ? (
-          <Card className="flex flex-col items-center justify-center bg-muted p-4">
-            <Mic
-              className={cn(
-                'w-12 h-12 text-muted-foreground transition-colors',
-                isRecording && 'text-green-500 animate-pulse'
-              )}
-            />
-            <p className="mt-2 text-sm text-muted-foreground">
-              {isRecording ? 'Recording...' : 'Audio only mode'}
-            </p>
-          </Card>
-        ) : null}
-
-        <Card className="transition-transform transform hover:scale-[1.02] flex-grow">
-          <CardHeader>
-            <CardTitle>Your Answer</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4 flex flex-col h-[calc(100%-76px)]">
-            <Textarea
-              placeholder={interviewMode !== 'text' ? "Your answer will be transcribed here... or type it directly." : "Type your answer here..."}
-              value={userAnswer}
-              onChange={(e) => setUserAnswer(e.target.value)}
-              className="w-full flex-grow"
-            />
-            <div className="flex justify-between items-center">
-              {interviewMode !== 'text' ? (
-                <Button onClick={toggleRecording} variant="outline" size="icon">
-                  {isRecording ? (
-                    <MicOff className="text-red-500" />
-                  ) : (
-                    <Mic />
-                  )}
-                </Button>
-              ) : <div></div>}
-              <Button onClick={submitAnswer} disabled={loading || !userAnswer}>
-                {loading && analysis === null ? (
-                  <Loader2 className="animate-spin" />
-                ) : (
-                  <>
-                    Submit Answer <Send className="ml-2" />
-                  </>
-                )}
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+        )}
       </div>
     </div>
   );
 }
+
