@@ -1,4 +1,3 @@
-
 'use server';
 
 /**
@@ -11,14 +10,11 @@
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 
-const TrendDataSchema = z.object({
-  month: z.string().describe('The month for the data point (e.g., "Jan").'),
-  'Software Engineer': z.number().describe('The average salary for a Software Engineer.'),
-  'Data Scientist': z.number().describe('The average salary for a Data Scientist.'),
-  'Product Manager': z.number().describe('The average salary for a Product Manager.'),
-  'DevOps Engineer': z.number().describe('The average salary for a DevOps Engineer.'),
-  'UX/UI Designer': z.number().describe('The average salary for a UX/UI Designer.'),
-  'Cybersecurity Analyst': z.number().describe('The average salary for a Cybersecurity Analyst.'),
+const SalaryByExperienceSchema = z.object({
+  role: z.string().describe('The job role.'),
+  'Entry-Level': z.number().describe('The average salary for an entry-level position.'),
+  'Mid-Level': z.number().describe('The average salary for a mid-level position.'),
+  'Senior-Level': z.number().describe('The average salary for a senior-level position.'),
 });
 
 const DemandDataSchema = z.object({
@@ -32,10 +28,10 @@ const LocationDataSchema = z.object({
 });
 
 const GetJobTrendsOutputSchema = z.object({
-  salaryTrends: z
-    .array(TrendDataSchema)
-    .length(12)
-    .describe('An array of salary data for the last 12 months.'),
+  salaryByExperience: z
+    .array(SalaryByExperienceSchema)
+    .length(6)
+    .describe('An array of salary data by experience for key tech roles.'),
   marketDemand: z
     .array(DemandDataSchema)
     .length(6)
@@ -53,10 +49,10 @@ export async function getJobTrends(): Promise<GetJobTrendsOutput> {
 const getJobTrendsPrompt = ai.definePrompt({
   name: 'getJobTrendsPrompt',
   output: { schema: GetJobTrendsOutputSchema },
-  prompt: `You are a job market analyst. Generate realistic, but fictional, trend data for the last 12 months for the following roles: Software Engineer, Data Scientist, Product Manager, DevOps Engineer, UX/UI Designer, and Cybersecurity Analyst. Also provide data on job openings in key tech hubs.
+  prompt: `You are a job market analyst. Generate realistic, but fictional, trend data for the following roles: Software Engineer, Data Scientist, Product Manager, DevOps Engineer, UX/UI Designer, and Cybersecurity Analyst. Also provide data on job openings in key tech hubs.
 
 Provide the following:
-1.  **Salary Trends**: Create a month-by-month breakdown of the average salary (in USD, without symbols, e.g., 120000) for each role. Start from 12 months ago and end with the current month. The months should be abbreviated (Jan, Feb, etc.). Show a believable progression, including slight dips and rises, reflecting market dynamics.
+1.  **Salary by Experience**: For each of the six roles, provide the average annual salary (in USD, without symbols, e.g., 85000) for "Entry-Level", "Mid-Level", and "Senior-Level" positions. The data should be an array of objects.
 2.  **Market Demand**: Provide a current demand score (1-100) for each of the six roles. A higher score means more demand.
 3.  **Job Openings by Location**: Provide the number of open tech positions for a mix of 5 key tech hubs in India and around the world (e.g., Bengaluru, San Francisco, London, Hyderabad, Singapore).`,
 });

@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -13,8 +12,6 @@ import {
   CartesianGrid,
   Cell,
   Legend,
-  Line,
-  LineChart,
   Pie,
   PieChart,
   ResponsiveContainer,
@@ -72,7 +69,7 @@ export default function TrendsPage() {
           const parsedData = JSON.parse(cachedData);
           // Simple validation to ensure the data structure is what we expect
           if (
-            parsedData.salaryTrends &&
+            parsedData.salaryByExperience &&
             parsedData.marketDemand &&
             parsedData.marketDemand.length === 6
           ) {
@@ -153,75 +150,51 @@ export default function TrendsPage() {
 
       <Card className="col-span-1 lg:col-span-2">
         <CardHeader>
-          <CardTitle>Average Salary Trends (Last 12 Months)</CardTitle>
+          <CardTitle>Salary by Experience Level</CardTitle>
           <CardDescription>
-            Monthly estimated salary for popular tech roles.
+            Estimated annual salary for popular tech roles based on experience.
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <ChartContainer config={{}} className="h-[300px] w-full">
-            <LineChart data={trendsData.salaryTrends}>
+          <ChartContainer config={{}} className="h-[350px] w-full">
+            <BarChart data={trendsData.salaryByExperience}>
               <CartesianGrid vertical={false} />
               <XAxis
-                dataKey="month"
+                dataKey="role"
                 tickLine={false}
                 axisLine={false}
                 tickMargin={8}
+                interval={0}
+                angle={-30}
+                textAnchor="end"
+                height={80}
               />
               <YAxis tickFormatter={formatCurrency} width={80} />
               <Tooltip
                 content={
                   <ChartTooltipContent
                     formatter={(value) => formatCurrency(value as number)}
-                    indicator="line"
+                    indicator="dot"
                   />
                 }
               />
               <Legend />
-              <Line
-                dataKey="Software Engineer"
-                type="monotone"
-                stroke="hsl(var(--chart-1))"
-                strokeWidth={2}
-                dot={false}
+              <Bar
+                dataKey="Entry-Level"
+                fill="hsl(var(--chart-1))"
+                radius={4}
               />
-              <Line
-                dataKey="Data Scientist"
-                type="monotone"
-                stroke="hsl(var(--chart-2))"
-                strokeWidth={2}
-                dot={false}
+              <Bar
+                dataKey="Mid-Level"
+                fill="hsl(var(--chart-2))"
+                radius={4}
               />
-              <Line
-                dataKey="Product Manager"
-                type="monotone"
-                stroke="hsl(var(--chart-3))"
-                strokeWidth={2}
-                dot={false}
+              <Bar
+                dataKey="Senior-Level"
+                fill="hsl(var(--chart-3))"
+                radius={4}
               />
-              <Line
-                dataKey="DevOps Engineer"
-                type="monotone"
-                stroke="hsl(var(--chart-4))"
-                strokeWidth={2}
-                dot={false}
-              />
-              <Line
-                dataKey="UX/UI Designer"
-                type="monotone"
-                stroke="hsl(var(--chart-5))"
-                strokeWidth={2}
-                dot={false}
-              />
-              <Line
-                dataKey="Cybersecurity Analyst"
-                type="monotone"
-                stroke="hsl(var(--chart-1))"
-                strokeDasharray="3 3"
-                strokeWidth={2}
-                dot={false}
-              />
-            </LineChart>
+            </BarChart>
           </ChartContainer>
         </CardContent>
       </Card>
