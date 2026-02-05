@@ -20,6 +20,7 @@ import {
   analyzeInterviewAnswer,
   AnalyzeInterviewAnswerOutput,
 } from '@/ai/flows/analyze-interview-answer-flow';
+import { textToSpeech } from '@/ai/flows/text-to-speech-flow';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -52,6 +53,7 @@ export default function InterviewPage() {
   const [interviewStarted, setInterviewStarted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [currentQuestion, setCurrentQuestion] = useState('');
+  const [questionAudio, setQuestionAudio] = useState<string | null>(null);
   const [userAnswer, setUserAnswer] = useState('');
   const [analysis, setAnalysis] = useState<AnalyzeInterviewAnswerOutput | null>(null);
   const [isRecording, setIsRecording] = useState(false);
@@ -157,6 +159,10 @@ export default function InterviewPage() {
         resumeDataUri: userProfile.resumeDataUri,
       });
       setCurrentQuestion(result.question);
+      if (result.question) {
+        const audioResult = await textToSpeech(result.question);
+        setQuestionAudio(audioResult.audioDataUri);
+      }
     } catch (error) {
       console.error('Error starting interview:', error);
       toast({
@@ -223,6 +229,7 @@ export default function InterviewPage() {
     setCurrentQuestion('');
     setUserAnswer('');
     setAnalysis(null);
+    setQuestionAudio(null);
     if (!userProfile?.resumeDataUri) return;
     try {
       const result = await mockInterviewWithRealtimeFeedback({
@@ -230,6 +237,10 @@ export default function InterviewPage() {
         resumeDataUri: userProfile.resumeDataUri,
       });
       setCurrentQuestion(result.question);
+      if (result.question) {
+        const audioResult = await textToSpeech(result.question);
+        setQuestionAudio(audioResult.audioDataUri);
+      }
     } catch (error) {
       toast({
         variant: 'destructive',
@@ -338,6 +349,7 @@ export default function InterviewPage() {
 
   return (
     <div className="w-full max-w-4xl mx-auto flex flex-col gap-6 animate-fade-in-up">
+      {questionAudio && <audio src={questionAudio} autoPlay />}
       <Card className="transition-all duration-300 transform hover:scale-[1.01] border border-transparent hover:border-primary/50">
         <CardHeader>
           <CardTitle className="text-xl font-semibold">Interview Question</CardTitle>
@@ -486,4 +498,3 @@ export default function InterviewPage() {
     </div>
   );
 }
-
