@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
@@ -13,13 +12,6 @@ import {
   RefreshCcw,
   Keyboard,
 } from 'lucide-react';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import {
   mockInterviewWithRealtimeFeedback,
 } from '@/ai/flows/mock-interview-flow';
@@ -44,6 +36,7 @@ import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { useDoc, useFirestore, useUser } from '@/firebase';
 import { doc } from 'firebase/firestore';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 
 const SpeechRecognition =
   (typeof window !== 'undefined' && window.SpeechRecognition) ||
@@ -250,56 +243,83 @@ export default function InterviewPage() {
   if (!interviewStarted) {
     return (
       <div className="flex justify-center items-center h-full animate-pop-in p-4 sm:p-0">
-        <Card className="w-full max-w-md transition-transform transform hover:scale-[1.02]">
-          <CardHeader>
-            <CardTitle>Mock Interview Simulator</CardTitle>
+        <Card className="w-full max-w-lg transition-transform transform hover:scale-[1.02]">
+          <CardHeader className="text-center">
+            <CardTitle className="text-3xl">Mock Interview Simulator</CardTitle>
             <CardDescription>
               Prepare for your next interview. Choose your settings to begin.
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-6">
+          <CardContent className="space-y-8 pt-6">
             <div className="space-y-2">
-              <Label htmlFor="domain">Interview Domain</Label>
+              <Label htmlFor="domain" className="text-base font-semibold">
+                Interview Domain
+              </Label>
               <Input
                 id="domain"
-                placeholder="e.g., Software Engineering"
+                placeholder="e.g., Software Engineering, Product Management"
                 value={domain}
                 onChange={(e) => setDomain(e.target.value)}
+                className="h-12 text-base"
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="interview-mode">Interview Mode</Label>
-              <Select
-                onValueChange={(value: InterviewMode) =>
-                  setInterviewMode(value)
-                }
+            <div className="space-y-4">
+              <Label className="text-base font-semibold">Interview Mode</Label>
+              <RadioGroup
                 value={interviewMode}
+                onValueChange={(value) =>
+                  setInterviewMode(value as InterviewMode)
+                }
+                className="grid grid-cols-1 sm:grid-cols-3 gap-4"
               >
-                <SelectTrigger id="interview-mode">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="video">
-                    <div className="flex items-center gap-2">
-                      <Video /> Video Interview
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="audio">
-                    <div className="flex items-center gap-2">
-                      <Mic /> Audio Interview
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="text">
-                    <div className="flex items-center gap-2">
-                      <Keyboard /> Text-based Interview
-                    </div>
-                  </SelectItem>
-                </SelectContent>
-              </Select>
+                <div>
+                  <RadioGroupItem
+                    value="video"
+                    id="video"
+                    className="peer sr-only"
+                  />
+                  <Label
+                    htmlFor="video"
+                    className="flex flex-col items-center justify-center rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer h-full"
+                  >
+                    <Video className="mb-3 h-6 w-6" />
+                    Video Interview
+                  </Label>
+                </div>
+                <div>
+                  <RadioGroupItem
+                    value="audio"
+                    id="audio"
+                    className="peer sr-only"
+                  />
+                  <Label
+                    htmlFor="audio"
+                    className="flex flex-col items-center justify-center rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer h-full"
+                  >
+                    <Mic className="mb-3 h-6 w-6" />
+                    Audio Interview
+                  </Label>
+                </div>
+                <div>
+                  <RadioGroupItem
+                    value="text"
+                    id="text"
+                    className="peer sr-only"
+                  />
+                  <Label
+                    htmlFor="text"
+                    className="flex flex-col items-center justify-center rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer h-full"
+                  >
+                    <Keyboard className="mb-3 h-6 w-6" />
+                    Text-based
+                  </Label>
+                </div>
+              </RadioGroup>
             </div>
             <Button
               onClick={startInterview}
-              className="w-full"
+              className="w-full h-12 text-lg"
+              size="lg"
               disabled={loading}
             >
               {loading ? (
