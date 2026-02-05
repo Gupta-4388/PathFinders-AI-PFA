@@ -11,13 +11,11 @@ const Logo = ({ className }: { className?: string }) => (
       xmlns="http://www.w3.org/2000/svg"
       className="text-accent flex-shrink-0"
     >
-      <path d="M9 14.2861C9 14.2861 8.57143 16.5714 10.2857 17.5714C12 18.5714 12.8571 16.2857 12.4286 15.2857C12 14.2857 11.2857 13.5714 10.7143 13.2857C10.1429 13 9 13.2857 9 14.2861Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-      <path d="M15 14.5C15 14.5 15.5 16.5 14 17.5C12.5 18.5 12 16.5 12.5 15.5C13 14.5 13.5 14 14 13.5C14.5 13 15 13.5 15 14.5Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-      <path d="M12 11.5C12 11.5 11.5 9.5 13 8.5C14.5 7.5 15 9.5 14.5 10.5C14 11.5 13.5 12 13 12.5C12.5 13 12 12.5 12 11.5Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-      <path d="M19.4286 10.8571C21.7143 12.2857 22.2857 15.7143 20.7143 18C19.1429 20.2857 15.4286 21.1429 13.1429 19.7143C13.1429 19.7143 10.8571 21.7143 8.57143 20.2857C6.28571 18.8571 6 15.4286 7.57143 13.1429C7.57143 13.1429 5.71429 11.7143 6.85714 9.42857C8 7.14286 11.4286 6 13.7143 7.42857C13.7143 7.42857 16 5.42857 18.2857 6.85714C20.5714 8.28571 19.4286 10.8571 19.4286 10.8571Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-      <path d="M12.5 3V4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-      <path d="M16.5 4.5L16 5.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-      <path d="M8.5 4.5L9 5.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+      <path d="M9.5 12.5C9.5 13.3284 8.82843 14 8 14C7.17157 14 6.5 13.3284 6.5 12.5C6.5 11.6716 7.17157 11 8 11C8.82843 11 9.5 11.6716 9.5 12.5Z" stroke="currentColor" strokeWidth="1.5"/>
+      <path d="M17.5 12.5C17.5 13.3284 16.8284 14 16 14C15.1716 14 14.5 13.3284 14.5 12.5C14.5 11.6716 15.1716 11 16 11C16.8284 11 17.5 11.6716 17.5 12.5Z" stroke="currentColor" strokeWidth="1.5"/>
+      <path d="M12 9C12 9.55228 11.5523 10 11 10C10.4477 10 10 9.55228 10 9C10 8.44772 10.4477 8 11 8C11.5523 8 12 8.44772 12 9Z" fill="currentColor"/>
+      <path d="M14 9C14 9.55228 13.5523 10 13 10C12.4477 10 12 9.55228 12 9C12 8.44772 12.4477 8 13 8C13.5523 8 14 8.44772 14 9Z" fill="currentColor"/>
+      <path d="M12 21.5C17.2467 21.5 21.5 17.2467 21.5 12C21.5 6.75329 17.2467 2.5 12 2.5C6.75329 2.5 2.5 6.75329 2.5 12C2.5 14.0385 3.24247 15.891 4.5 17.3M4.5 17.3L4.50001 17.3001L8.5 14.5M4.5 17.3L6.5 18.5M8.5 14.5L12.5 11M8.5 14.5L11 16.5M6.5 18.5L9.5 20.5M6.5 18.5L11 16.5M11 16.5L14 18.5M9.5 20.5L14 18.5M19.5 17.3L15.5 14.5M19.5 17.3L17.5 18.5M15.5 14.5L12.5 11M15.5 14.5L13 16.5M17.5 18.5L14.5 20.5M17.5 18.5L13 16.5M14 18.5L14.5 20.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
     </svg>
     <span className="text-xl font-bold text-foreground whitespace-nowrap group-data-[collapsible=icon]:hidden">
       PathFinder AI
