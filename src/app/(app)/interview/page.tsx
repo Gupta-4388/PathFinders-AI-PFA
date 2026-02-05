@@ -469,7 +469,7 @@ export default function InterviewPage() {
   return (
     <div className="w-full max-w-4xl mx-auto flex flex-col gap-6 animate-fade-in-up">
       {questionAudio && <audio src={questionAudio} autoPlay />}
-      <Card className="transition-all duration-300 transform hover:scale-[1.01] border border-transparent hover:border-primary/50">
+      <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle className="text-xl font-semibold">Interview Question</CardTitle>
           <Button variant="destructive" size="sm" onClick={endInterview}>
@@ -488,7 +488,7 @@ export default function InterviewPage() {
 
       <div className="flex-grow">
         {analysis ? (
-          <Card className="animate-pop-in transition-all duration-300 transform hover:scale-[1.01] border border-transparent hover:border-primary/50">
+          <Card className="animate-pop-in">
             <CardHeader>
               <CardTitle>AI Feedback</CardTitle>
               <CardDescription>
@@ -526,7 +526,7 @@ export default function InterviewPage() {
             </CardContent>
           </Card>
         ) : (
-          <Card className="flex flex-col flex-grow transition-all duration-300 transform hover:scale-[1.01] border border-transparent hover:border-primary/50">
+          <Card className="flex flex-col flex-grow">
             <CardHeader>
               <CardTitle>Your Answer</CardTitle>
             </CardHeader>
@@ -608,7 +608,7 @@ export default function InterviewPage() {
                 {interviewMode !== 'text' ? (
                   <Button
                     onClick={toggleRecording}
-                    variant="outline"
+                    variant="secondary"
                     size="lg"
                     className="h-11"
                     disabled={loading}
@@ -652,5 +652,7 @@ export default function InterviewPage() {
     </div>
   );
 }
+
+    
 
     
