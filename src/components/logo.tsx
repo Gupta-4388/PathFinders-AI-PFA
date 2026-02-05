@@ -11,8 +11,10 @@ const Logo = ({ className }: { className?: string }) => (
       xmlns="http://www.w3.org/2000/svg"
       className="text-accent flex-shrink-0"
     >
-      <path d="M5 19C5 19 5 12 12 12C19 12 19 5 19 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-      <path d="M17 3L18.165 6.33501L21.5 7.5L18.165 8.66501L17 12L15.835 8.66501L12.5 7.5L15.835 6.33501L17 3Z" fill="currentColor"/>
+        <path d="M4 20V8C4 5.79086 5.79086 4 8 4H12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+        <path d="M12 4H16C18.2091 4 20 5.79086 20 8V12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+        <path d="M12 12L20 20" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+        <path d="M12 12V4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
     </svg>
     <span className="text-xl font-bold text-foreground whitespace-nowrap group-data-[collapsible=icon]:hidden">
       PathFinder AI
