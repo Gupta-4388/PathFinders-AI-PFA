@@ -38,20 +38,26 @@ const SuggestedRoleSchema = z.object({
 });
 
 const AnalyzeResumeOutputSchema = z.object({
+  isResume: z.boolean().describe('Whether the uploaded document is a resume or CV.'),
+  rejectionReason: z.string().optional().describe('If the document is not a resume, explain why.'),
   skillSummary: z
     .string()
+    .optional()
     .describe('A high-level summary of the skills identified in the resume.'),
   improvementInsights: z
     .array(z.string())
+    .optional()
     .describe(
       'A short, optimized list of AI-driven insights to improve the resume, including identifying potential mistakes and missing skills.'
     ),
   extractedSkills: z
     .array(z.string())
     .max(5)
+    .optional()
     .describe('A concise list of the top 5 most relevant skills extracted from the resume.'),
   suggestedRoles: z
     .array(SuggestedRoleSchema)
+    .optional()
     .describe(
       'A list of 3-5 suitable job roles based on the resume and current market analysis.'
     ),
@@ -68,13 +74,17 @@ const analyzeResumePrompt = ai.definePrompt({
   name: 'analyzeResumePrompt',
   input: {schema: AnalyzeResumeInputSchema},
   output: {schema: AnalyzeResumeOutputSchema},
-  prompt: `You are an expert career coach and tech recruiter. Analyze the following resume and provide:
+  prompt: `You are an expert career coach and tech recruiter. Your first task is to determine if the provided document is a professional resume or CV.
+
+If the document is a resume/CV, set 'isResume' to true and provide the following analysis:
 1.  A high-level summary of the user's skills.
 2.  A short, optimized list of actionable insights to improve the resume (e.g., clarity, impact, missing information).
 3.  A concise list of the top 5 most relevant skills extracted from the resume content.
 4.  Analyze current job market openings and suggest 3-5 suitable roles for the candidate, including a title, a short description, and a match confidence score.
 
-Resume:
+If the document is NOT a resume/CV, set 'isResume' to false, provide a brief 'rejectionReason' explaining why it's not a resume (e.g., "The document appears to be a receipt."), and do not fill out the other analysis fields.
+
+Document:
 {{media url=resumeDataUri}}`,
 });
 

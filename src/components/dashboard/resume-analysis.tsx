@@ -41,7 +41,7 @@ export default function ResumeAnalysis({ analysis }: ResumeAnalysisProps) {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-muted-foreground">{analysis.skillSummary}</p>
+            <p className="text-muted-foreground">{analysis.skillSummary || 'No summary could be generated.'}</p>
           </CardContent>
         </Card>
 
@@ -57,12 +57,16 @@ export default function ResumeAnalysis({ analysis }: ResumeAnalysisProps) {
           </CardHeader>
           <CardContent>
             <ul className="space-y-3">
-              {analysis.improvementInsights.map((insight, index) => (
-                <li key={index} className="flex items-start gap-3">
-                  <CheckCircle className="w-5 h-5 mt-1 text-green-500 shrink-0" />
-                  <span>{insight}</span>
-                </li>
-              ))}
+              {analysis.improvementInsights && analysis.improvementInsights.length > 0 ? (
+                analysis.improvementInsights.map((insight, index) => (
+                  <li key={index} className="flex items-start gap-3">
+                    <CheckCircle className="w-5 h-5 mt-1 text-green-500 shrink-0" />
+                    <span>{insight}</span>
+                  </li>
+                ))
+              ) : (
+                <li className="text-muted-foreground">No improvement insights available.</li>
+              )}
             </ul>
           </CardContent>
         </Card>
@@ -78,11 +82,15 @@ export default function ResumeAnalysis({ analysis }: ResumeAnalysisProps) {
             </CardTitle>
           </CardHeader>
           <CardContent className="flex flex-wrap gap-2">
-            {analysis.extractedSkills.map((skill, index) => (
-              <Badge key={index} variant="secondary">
-                {skill}
-              </Badge>
-            ))}
+            {analysis.extractedSkills && analysis.extractedSkills.length > 0 ? (
+              analysis.extractedSkills.map((skill, index) => (
+                <Badge key={index} variant="secondary">
+                  {skill}
+                </Badge>
+              ))
+            ) : (
+              <p className="text-sm text-muted-foreground">No skills were extracted.</p>
+            )}
           </CardContent>
         </Card>
 
@@ -97,23 +105,27 @@ export default function ResumeAnalysis({ analysis }: ResumeAnalysisProps) {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Accordion type="single" collapsible className="w-full">
-              {analysis.suggestedRoles.map((role, index) => (
-                <AccordionItem key={index} value={`item-${index}`}>
-                  <AccordionTrigger>
-                    <div className="flex justify-between w-full pr-4">
-                      <span className="truncate">{role.title}</span>
-                      <Badge variant="outline">{role.matchConfidence}%</Badge>
-                    </div>
-                  </AccordionTrigger>
-                  <AccordionContent>
-                    <p className="text-sm text-muted-foreground">
-                      {role.description}
-                    </p>
-                  </AccordionContent>
-                </AccordionItem>
-              ))}
-            </Accordion>
+            {analysis.suggestedRoles && analysis.suggestedRoles.length > 0 ? (
+              <Accordion type="single" collapsible className="w-full">
+                {analysis.suggestedRoles.map((role, index) => (
+                  <AccordionItem key={index} value={`item-${index}`}>
+                    <AccordionTrigger>
+                      <div className="flex justify-between w-full pr-4">
+                        <span className="truncate">{role.title}</span>
+                        <Badge variant="outline">{role.matchConfidence}%</Badge>
+                      </div>
+                    </AccordionTrigger>
+                    <AccordionContent>
+                      <p className="text-sm text-muted-foreground">
+                        {role.description}
+                      </p>
+                    </AccordionContent>
+                  </AccordionItem>
+                ))}
+              </Accordion>
+            ) : (
+              <p className="text-sm text-muted-foreground text-center pt-4">No roles were suggested.</p>
+            )}
           </CardContent>
         </Card>
       </div>

@@ -41,7 +41,7 @@ export default function ResumePage() {
   const handleAnalysis = async (fileToAnalyze: File) => {
     setLoading(true);
     setAnalysis(null);
-    localStorage.removeItem('recommendedCareerPaths'); // Clear previous recommendations
+    localStorage.removeItem('recommendedCareerPaths');
 
     const reader = new FileReader();
     reader.readAsDataURL(fileToAnalyze);
@@ -50,17 +50,28 @@ export default function ResumePage() {
         const resumeDataUri = reader.result as string;
 
         const analysisResult = await analyzeResume({ resumeDataUri });
-        setAnalysis(analysisResult);
+        
+        if (analysisResult.isResume) {
+            setAnalysis(analysisResult);
 
-        if (analysisResult.extractedSkills.length > 0) {
-          const careerPathResult = await recommendCareerPaths({
-            skills: analysisResult.extractedSkills,
-          });
-          localStorage.setItem(
-            'recommendedCareerPaths',
-            JSON.stringify(careerPathResult)
-          );
+            if (analysisResult.extractedSkills && analysisResult.extractedSkills.length > 0) {
+              const careerPathResult = await recommendCareerPaths({
+                skills: analysisResult.extractedSkills,
+              });
+              localStorage.setItem(
+                'recommendedCareerPaths',
+                JSON.stringify(careerPathResult)
+              );
+            }
+        } else {
+            toast({
+                variant: 'destructive',
+                title: 'Invalid File',
+                description: analysisResult.rejectionReason || "The uploaded file does not appear to be a resume. Please upload a valid resume (CV)."
+            });
+            setFile(null); // Clear the invalid file
         }
+
       } catch (error) {
         console.error('Error analyzing resume:', error);
         toast({
