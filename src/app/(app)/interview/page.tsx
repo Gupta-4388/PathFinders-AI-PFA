@@ -250,7 +250,7 @@ export default function InterviewPage() {
   if (!interviewStarted) {
     return (
       <div className="flex justify-center items-center h-full animate-pop-in p-4 sm:p-0">
-        <Card className="w-full max-w-md transition-transform transform hover:scale-105">
+        <Card className="w-full max-w-md transition-transform transform hover:scale-[1.02]">
           <CardHeader>
             <CardTitle>Mock Interview Simulator</CardTitle>
             <CardDescription>
@@ -319,7 +319,7 @@ export default function InterviewPage() {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 h-full animate-fade-in-up">
       <div className="flex flex-col gap-4">
-        <Card className="flex-grow transition-transform transform hover:scale-105">
+        <Card className="flex-grow transition-transform transform hover:scale-[1.02]">
           <CardHeader>
             <CardTitle>Interview Question</CardTitle>
           </CardHeader>
@@ -377,7 +377,7 @@ export default function InterviewPage() {
 
       <div className="flex flex-col gap-4">
         {interviewMode === 'video' ? (
-          <Card className="flex-grow transition-transform transform hover:scale-105">
+          <Card className="flex-grow transition-transform transform hover:scale-[1.02]">
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle>Your Camera</CardTitle>
               <Badge variant={hasCameraPermission ? 'default' : 'destructive'}>
@@ -424,7 +424,7 @@ export default function InterviewPage() {
           </Card>
         ) : null}
 
-        <Card className="transition-transform transform hover:scale-105 flex-grow">
+        <Card className="transition-transform transform hover:scale-[1.02] flex-grow">
           <CardHeader>
             <CardTitle>Your Answer</CardTitle>
           </CardHeader>

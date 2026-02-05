@@ -107,7 +107,7 @@ export default function MentorPage() {
 
   return (
     <div className="flex flex-col h-[calc(100vh-8rem)] sm:h-[calc(100vh-10rem)] animate-fade-in">
-      <Card className="flex-1 flex flex-col">
+      <Card className="flex-1 flex flex-col transition-transform transform hover:scale-[1.02]">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Bot /> AI Mentor
@@ -136,7 +136,7 @@ export default function MentorPage() {
                   )}
                   <div
                     className={cn(
-                      'max-w-md lg:max-w-2xl p-4 rounded-xl shadow-md',
+                      'max-w-md lg:max-w-2xl p-4 rounded-xl shadow-md transition-transform transform hover:scale-[1.02]',
                       message.role === 'user'
                         ? 'bg-primary text-primary-foreground rounded-br-none'
                         : 'bg-muted rounded-bl-none'

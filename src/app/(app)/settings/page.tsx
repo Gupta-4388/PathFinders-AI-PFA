@@ -193,7 +193,7 @@ export default function SettingsPage() {
           Manage your account settings and preferences.
         </p>
       </div>
-      <Card className="transition-transform transform hover:scale-105">
+      <Card className="transition-transform transform hover:scale-[1.02]">
         <CardHeader>
           <CardTitle>Profile</CardTitle>
           <CardDescription>
@@ -237,7 +237,7 @@ export default function SettingsPage() {
         </CardContent>
       </Card>
       
-      <Card className="transition-transform transform hover:scale-105">
+      <Card className="transition-transform transform hover:scale-[1.02]">
         <CardHeader>
           <CardTitle>Your Resume</CardTitle>
           <CardDescription>
@@ -280,7 +280,7 @@ export default function SettingsPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="space-y-6">
-            <Card className="transition-transform transform hover:scale-105">
+            <Card className="transition-transform transform hover:scale-[1.02]">
               <CardHeader>
                 <CardTitle>Appearance</CardTitle>
                 <CardDescription>
@@ -291,7 +291,7 @@ export default function SettingsPage() {
                 <ThemeToggle />
               </CardContent>
             </Card>
-            <Card className="transition-transform transform hover:scale-105 block lg:hidden">
+            <Card className="transition-transform transform hover:scale-[1.02] block lg:hidden">
                 <CardHeader>
                     <CardTitle>Sign Out</CardTitle>
                     <CardDescription>
@@ -307,7 +307,7 @@ export default function SettingsPage() {
             </Card>
         </div>
         <div className="space-y-6">
-            <Card className="transition-transform transform hover:scale-105">
+            <Card className="transition-transform transform hover:scale-[1.02]">
                 <CardHeader>
                     <CardTitle>Change Password</CardTitle>
                     <CardDescription>
@@ -332,7 +332,7 @@ export default function SettingsPage() {
                     </form>
                 </CardContent>
             </Card>
-            <Card className="transition-transform transform hover:scale-105 hidden lg:block">
+            <Card className="transition-transform transform hover:scale-[1.02] hidden lg:block">
                 <CardHeader>
                     <CardTitle>Sign Out</CardTitle>
                     <CardDescription>

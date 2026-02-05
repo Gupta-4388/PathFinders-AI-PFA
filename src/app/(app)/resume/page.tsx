@@ -2,7 +2,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Upload, File as FileIcon, Loader2, X } from 'lucide-react';
+import { File as FileIcon, Loader2, X } from 'lucide-react';
 import { useDropzone } from 'react-dropzone';
 import * as React from 'react';
 
@@ -17,6 +17,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import ResumeAnalysis from '@/components/dashboard/resume-analysis';
+import { Player } from '@lottiefiles/react-lottie-player';
 
 export default function ResumePage() {
   const [analysis, setAnalysis] = useState<AnalyzeResumeOutput | null>(null);
@@ -113,7 +114,7 @@ export default function ResumePage() {
   
   return (
     <div className="space-y-6 animate-fade-in">
-      <Card className="transition-transform transform hover:scale-105">
+      <Card className="transition-transform transform hover:scale-[1.02]">
         <CardHeader>
           <CardTitle className="text-accent">Resume Analyzer</CardTitle>
         </CardHeader>
@@ -127,7 +128,12 @@ export default function ResumePage() {
             }`}
           >
             <input {...getInputProps()} />
-            <Upload className="w-12 h-12 text-muted-foreground" />
+            <Player
+              autoplay
+              loop
+              src="https://lottie.host/80a3a709-54b6-4552-b118-135414f5a359/j77yBF8s3i.json"
+              style={{ height: '100px', width: '100px' }}
+            />
             <p className="mt-4 text-center text-muted-foreground">
               { file ? "Drop a different file or click to replace" : "Upload your resume here" }
             </p>
