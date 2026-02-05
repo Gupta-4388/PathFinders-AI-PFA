@@ -544,6 +544,10 @@ export default function InterviewPage() {
                       <>
                         <MicOff className="mr-2 text-red-500" /> Stop Recording
                       </>
+                    ) : userAnswer.trim() ? (
+                      <>
+                        <RefreshCcw className="mr-2" /> Record Again
+                      </>
                     ) : (
                       <>
                         <Mic className="mr-2" /> Start Recording
@@ -555,7 +559,7 @@ export default function InterviewPage() {
                 )}
                 <Button
                   onClick={submitAnswer}
-                  disabled={loading || !userAnswer.trim()}
+                  disabled={loading || !userAnswer.trim() || isRecording}
                   size="lg"
                   className="h-11"
                 >
