@@ -115,8 +115,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             aria-hidden="true"
             className="absolute inset-0 grid grid-cols-2 -space-x-52 opacity-20"
           >
-            <div className="blur-[106px] h-56 bg-gradient-to-br from-primary to-green-500"></div>
-            <div className="blur-[106px] h-32 bg-gradient-to-r from-green-400 to-cyan-400"></div>
+            <div className="blur-[106px] h-56 bg-gradient-to-br from-primary to-purple-500"></div>
+            <div className="blur-[106px] h-32 bg-gradient-to-r from-cyan-400 to-sky-500"></div>
           </div>
           <header className="flex h-14 lg:h-[60px] items-center gap-4 border-b bg-card/50 px-6 sticky top-0 z-30">
             <div className="flex items-center gap-4">

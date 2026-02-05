@@ -44,10 +44,10 @@ export default function Home() {
         <section className="relative overflow-hidden py-20 md:py-32">
           <div
             aria-hidden="true"
-            className="absolute inset-0 grid grid-cols-2 -space-x-52 opacity-20"
+            className="absolute inset-0 grid grid-cols-2 -space-x-52 opacity-40"
           >
-            <div className="blur-[106px] h-56 bg-gradient-to-br from-primary to-green-500"></div>
-            <div className="blur-[106px] h-32 bg-gradient-to-r from-green-400 to-cyan-400"></div>
+            <div className="blur-[106px] h-56 bg-gradient-to-br from-primary to-purple-500"></div>
+            <div className="blur-[106px] h-32 bg-gradient-to-r from-cyan-400 to-sky-500"></div>
           </div>
           <div className="relative container mx-auto px-4 sm:px-6 lg:px-8 text-center">
             <div className="max-w-3xl mx-auto">

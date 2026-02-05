@@ -66,7 +66,7 @@ export default function DashboardPage() {
         try {
           const analysisResult = await analyzeResume({ resumeDataUri: userProfile.resumeDataUri });
 
-          if (analysisResult.extractedSkills.length > 0) {
+          if (analysisResult.isResume && analysisResult.extractedSkills.length > 0) {
             const careerPathResult = await recommendCareerPaths({
               skills: analysisResult.extractedSkills,
             });
@@ -95,7 +95,7 @@ export default function DashboardPage() {
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-fade-in-up">
-      <Card className="col-span-1 lg:col-span-3 transition-transform transform hover:scale-[1.02]">
+      <Card className="col-span-1 lg:col-span-3 transition-all duration-300 transform hover:scale-[1.02] border border-transparent hover:border-primary">
         <CardHeader>
           <CardTitle>Welcome Back, {userProfile?.name || 'PathFinder'}!</CardTitle>
           <CardDescription>
@@ -105,7 +105,7 @@ export default function DashboardPage() {
         </CardHeader>
       </Card>
 
-      <Card className="col-span-1 md:col-span-2 lg:col-span-3 transition-transform transform hover:scale-[1.02]">
+      <Card className="col-span-1 md:col-span-2 lg:col-span-3 transition-all duration-300 transform hover:scale-[1.02] border border-transparent hover:border-primary">
         <CardHeader>
           <CardTitle className="text-primary">Get Started</CardTitle>
           <CardDescription>
@@ -161,7 +161,7 @@ export default function DashboardPage() {
         </CardContent>
       </Card>
 
-      <Card className="col-span-1 md:col-span-2 lg:col-span-3 transition-transform transform hover:scale-[1.02]">
+      <Card className="col-span-1 md:col-span-2 lg:col-span-3 transition-all duration-300 transform hover:scale-[1.02] border border-transparent hover:border-primary">
         <CardHeader>
           <CardTitle className="text-primary">Recommended Career Paths</CardTitle>
           <CardDescription>
