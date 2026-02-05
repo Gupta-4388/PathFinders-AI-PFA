@@ -1,4 +1,3 @@
-// This is an AI-powered chatbot that provides personalized career guidance, mentorship suggestions, and skill growth roadmaps.
 'use server';
 
 import {ai} from '@/ai/genkit';
@@ -22,7 +21,7 @@ export type AIMentorProvidePersonalizedGuidanceInput = z.infer<
 >;
 
 const AIMentorProvidePersonalizedGuidanceOutputSchema = z.object({
-  response: z.string().describe('A concise, conversational response to the user\'s query.'),
+  response: z.string().describe("A concise, conversational response to the user's query."),
   keyPoints: z.array(z.string()).optional().describe('A list of optimized key takeaways or action items.'),
   suggestedResources: z
     .array(
@@ -30,10 +29,13 @@ const AIMentorProvidePersonalizedGuidanceOutputSchema = z.object({
         title: z.string(),
         url: z.string(),
         description: z.string().optional(),
+        category: z
+          .enum(['Website', 'Video', 'Course', 'Certification', 'Article', 'Other'])
+          .describe('The category of the resource.'),
       })
     )
     .optional()
-    .describe('Suggested resources for the user.'),
+    .describe('Suggested resources for the user, categorized for clarity.'),
 });
 export type AIMentorProvidePersonalizedGuidanceOutput = z.infer<
   typeof AIMentorProvidePersonalizedGuidanceOutputSchema
@@ -69,7 +71,7 @@ const prompt = ai.definePrompt({
   User Query: {{{query}}}
 
   Please provide a helpful and informative response tailored to the user's specific needs and goals.
-  If relevant, include suggested resources like YouTube videos, course links, and websites. Ensure all links are valid and working. Prioritize free certifications and resources whenever possible.
+  If relevant, include suggested resources like YouTube videos, course links, and websites. Classify each resource into a category: 'Website', 'Video', 'Course', 'Certification', 'Article', or 'Other'. Ensure all links are valid and working. Prioritize free certifications and resources whenever possible.
 `,
 });
 

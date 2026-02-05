@@ -37,6 +37,19 @@ type UserProfile = {
   profilePicture?: string;
 };
 
+const groupedResources = (resources: AIMentorProvidePersonalizedGuidanceOutput['suggestedResources']) => {
+    if (!resources) return {};
+    return resources.reduce((acc, resource) => {
+        const category = resource.category || 'Other';
+        if (!acc[category]) {
+            acc[category] = [];
+        }
+        acc[category].push(resource);
+        return acc;
+    }, {} as Record<string, typeof resources>);
+};
+
+
 export default function MentorPage() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
@@ -107,7 +120,7 @@ export default function MentorPage() {
 
   return (
     <div className="flex flex-col h-[calc(100vh-8rem)] sm:h-[calc(100vh-10rem)] animate-fade-in">
-      <Card className="flex-1 flex flex-col transition-transform transform hover:scale-[1.02]">
+      <Card className="flex-1 flex flex-col">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Bot /> AI Mentor
@@ -136,7 +149,7 @@ export default function MentorPage() {
                   )}
                   <div
                     className={cn(
-                      'max-w-md lg:max-w-2xl p-4 rounded-xl shadow-md transition-transform transform hover:scale-[1.02]',
+                      'max-w-md lg:max-w-2xl p-4 rounded-xl shadow-md',
                       message.role === 'user'
                         ? 'bg-primary text-primary-foreground rounded-br-none'
                         : 'bg-muted rounded-bl-none'
@@ -161,18 +174,23 @@ export default function MentorPage() {
                     {message.resources && message.resources.length > 0 && (
                       <div className="mt-4 space-y-3 border-t pt-3">
                         <h4 className="font-semibold flex items-center gap-2 text-sm"><BookOpen className="w-4 h-4"/> Suggested Resources:</h4>
-                        {message.resources.map((resource, i) => (
-                           <Card key={i} className="bg-background/50 hover:bg-background transition-colors transform hover:scale-[1.02]">
-                             <CardContent className="p-3">
-                                <Link href={resource.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 group">
-                                  <LinkIcon className="w-4 h-4 text-muted-foreground"/>
-                                  <div>
-                                    <p className="font-semibold text-sm group-hover:underline">{resource.title}</p>
-                                    <p className="text-xs text-muted-foreground">{resource.description}</p>
-                                  </div>
-                                </Link>
-                             </CardContent>
-                           </Card>
+                        {Object.entries(groupedResources(message.resources)).map(([category, resourcesInCategory]) => (
+                            <div key={category} className="space-y-2 pt-2">
+                                <h5 className="font-semibold text-xs text-muted-foreground uppercase tracking-wider">{category}</h5>
+                                {resourcesInCategory.map((resource, i) => (
+                                   <Card key={i} className="bg-background/50 hover:bg-background transition-colors">
+                                     <CardContent className="p-3">
+                                        <Link href={resource.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 group">
+                                          <LinkIcon className="w-4 h-4 text-muted-foreground"/>
+                                          <div>
+                                            <p className="font-semibold text-sm group-hover:underline">{resource.title}</p>
+                                            {resource.description && <p className="text-xs text-muted-foreground">{resource.description}</p>}
+                                          </div>
+                                        </Link>
+                                     </CardContent>
+                                   </Card>
+                                ))}
+                            </div>
                         ))}
                       </div>
                     )}
