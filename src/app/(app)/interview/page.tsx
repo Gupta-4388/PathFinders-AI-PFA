@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
@@ -47,7 +48,7 @@ type UserProfile = { resumeDataUri?: string };
 
 export default function InterviewPage() {
   const [domain, setDomain] = useState('');
-  const [interviewMode, setInterviewMode] = useState<InterviewMode>('video');
+  const [interviewMode, setInterviewMode] = useState<InterviewMode>('text');
   const [interviewStarted, setInterviewStarted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [currentQuestion, setCurrentQuestion] = useState('');
@@ -274,16 +275,16 @@ export default function InterviewPage() {
               >
                 <div>
                   <RadioGroupItem
-                    value="video"
-                    id="video"
+                    value="text"
+                    id="text"
                     className="peer sr-only"
                   />
                   <Label
-                    htmlFor="video"
+                    htmlFor="text"
                     className="flex flex-col items-center justify-center rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer h-full"
                   >
-                    <Video className="mb-3 h-6 w-6" />
-                    Video Interview
+                    <Keyboard className="mb-3 h-6 w-6" />
+                    Text-based
                   </Label>
                 </div>
                 <div>
@@ -302,16 +303,16 @@ export default function InterviewPage() {
                 </div>
                 <div>
                   <RadioGroupItem
-                    value="text"
-                    id="text"
+                    value="video"
+                    id="video"
                     className="peer sr-only"
                   />
                   <Label
-                    htmlFor="text"
+                    htmlFor="video"
                     className="flex flex-col items-center justify-center rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer h-full"
                   >
-                    <Keyboard className="mb-3 h-6 w-6" />
-                    Text-based
+                    <Video className="mb-3 h-6 w-6" />
+                    Video Interview
                   </Label>
                 </div>
               </RadioGroup>
