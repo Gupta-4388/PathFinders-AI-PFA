@@ -12,21 +12,15 @@ const Logo = ({ className }: { className?: string }) => (
       className="text-accent flex-shrink-0"
     >
       <path
-        d="M12 2L19.5 6L12 10L4.5 6L12 2Z"
-        fill="currentColor"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinejoin="round"
-      />
-      <path
-        d="M4.5 6V18L12 22L19.5 18V6"
+        d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z"
         stroke="currentColor"
         strokeWidth="1.5"
         strokeLinecap="round"
         strokeLinejoin="round"
       />
       <path
-        d="M12 10L12 22"
+        d="M10.5 13.5L12 8L13.5 13.5L16 12L13.5 10.5L12 6L10.5 10.5L8 12L10.5 13.5Z"
+        fill="currentColor"
         stroke="currentColor"
         strokeWidth="1.5"
         strokeLinecap="round"
