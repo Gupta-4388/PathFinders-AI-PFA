@@ -11,13 +11,10 @@ const Logo = ({ className }: { className?: string }) => (
       xmlns="http://www.w3.org/2000/svg"
       className="text-accent flex-shrink-0"
     >
-        <path d="M16 8.5C16 9.32843 15.3284 10 14.5 10C13.6716 10 13 9.32843 13 8.5C13 7.67157 13.6716 7 14.5 7C15.3284 7 16 7.67157 16 8.5Z" stroke="currentColor" strokeWidth="1.5"/>
-        <path d="M11 15.5C11 16.3284 10.3284 17 9.5 17C8.67157 17 8 16.3284 8 15.5C8 14.6716 8.67157 14 9.5 14C10.3284 14 11 14.6716 11 15.5Z" stroke="currentColor" strokeWidth="1.5"/>
-        <path d="M9.5 10.5C9.5 11.3284 8.82843 12 8 12C7.17157 12 6.5 11.3284 6.5 10.5C6.5 9.67157 7.17157 9 8 9C8.82843 9 9.5 9.67157 9.5 10.5Z" stroke="currentColor" strokeWidth="1.5"/>
-        <path d="M17.5 14C17.5 14.8284 16.8284 15.5 16 15.5C15.1716 15.5 14.5 14.8284 14.5 14C14.5 13.1716 15.1716 12.5 16 12.5C16.8284 12.5 17.5 13.1716 17.5 14Z" stroke="currentColor" strokeWidth="1.5"/>
-        <path d="M14.5 8.5C14.5 8.5 12.5 10 11.5 11C10.5 12 9.5 13.5 9.5 13.5M9.5 13.5L9.5 14M9.5 13.5C9.5 13.5 8.5 12.5 8 12" stroke="currentColor" strokeWidth="1.5"/>
-        <path d="M14.5 8.5C14.5 8.5 16 10.5 16 12.5" stroke="currentColor" strokeWidth="1.5"/>
-        <path d="M9.5 15.5C9.5 15.5 12.5 15 14.5 14" stroke="currentColor" strokeWidth="1.5"/>
+        <path d="M9 13C9 14.1046 8.10457 15 7 15C5.89543 15 5 14.1046 5 13C5 11.8954 5.89543 11 7 11C8.10457 11 9 11.8954 9 13Z" stroke="currentColor" strokeWidth="1.5"/>
+        <path d="M13 11C13 12.1046 12.1046 13 11 13C9.89543 13 9 12.1046 9 11C9 9.89543 9.89543 9 11 9C12.1046 9 13 9.89543 13 11Z" stroke="currentColor" strokeWidth="1.5"/>
+        <path d="M18 13C18 14.1046 17.1046 15 16 15C14.8954 15 14 14.1046 14 13C14 11.8954 14.8954 11 16 11C17.1046 11 18 11.8954 18 13Z" stroke="currentColor" strokeWidth="1.5"/>
+        <path d="M7 13H4M16 13H19M11 9V6" stroke="currentColor" strokeWidth="1.5"/>
         <path d="M12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2Z" stroke="currentColor" strokeWidth="1.5"/>
     </svg>
     <span className="text-xl font-bold text-foreground whitespace-nowrap group-data-[collapsible=icon]:hidden">
