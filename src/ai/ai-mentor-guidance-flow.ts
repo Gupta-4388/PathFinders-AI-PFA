@@ -71,7 +71,9 @@ const prompt = ai.definePrompt({
   User Query: {{{query}}}
 
   Please provide a helpful and informative response tailored to the user's specific needs and goals.
-  If relevant, include suggested resources like YouTube videos, course links, and websites. Classify each resource into a category: 'Website', 'Video', 'Course', 'Certification', 'Article', or 'Other'. Ensure all links are valid and working. Prioritize free certifications and resources whenever possible.
+  If relevant, include suggested resources and classify each into a category: 'Website', 'Video', 'Course', 'Certification', 'Article', or 'Other'.
+
+  IMPORTANT: It is absolutely critical that you only provide URLs that are valid and currently working. Double-check every link before including it in the response. Do not invent or guess URLs. If you are unsure if a link is active and correct, do not include it. Prioritize free certifications and resources whenever possible.
 `,
 });
 
