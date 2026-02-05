@@ -59,9 +59,11 @@ export default function InterviewPage() {
   const [analysis, setAnalysis] = useState<AnalyzeInterviewAnswerOutput | null>(null);
   const [isRecording, setIsRecording] = useState(false);
   const [hasCameraPermission, setHasCameraPermission] = useState(false);
+  const [recordingDuration, setRecordingDuration] = useState(0);
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const recognitionRef = useRef<SpeechRecognition | null>(null);
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
 
 
   const { toast } = useToast();
@@ -73,6 +75,27 @@ export default function InterviewPage() {
     [user, firestore]
   );
   const { data: userProfile } = useDoc<UserProfile>(userDocRef);
+
+  useEffect(() => {
+    if (isRecording) {
+      const startTime = Date.now();
+      timerRef.current = setInterval(() => {
+        setRecordingDuration(Math.floor((Date.now() - startTime) / 1000));
+      }, 1000);
+    } else {
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
+      setRecordingDuration(0);
+    }
+
+    return () => {
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+      }
+    };
+  }, [isRecording]);
 
   useEffect(() => {
     if (interviewStarted && interviewMode === 'video') {
@@ -280,6 +303,14 @@ export default function InterviewPage() {
     });
   };
 
+  const formatDuration = (seconds: number) => {
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    return `${String(minutes).padStart(2, '0')}:${String(
+      remainingSeconds
+    ).padStart(2, '0')}`;
+  };
+
   if (!interviewStarted) {
     return (
       <div className="flex justify-center items-center h-full animate-pop-in p-4 sm:p-0">
@@ -450,6 +481,12 @@ export default function InterviewPage() {
                     playsInline
                     muted
                   />
+                  {isRecording && (
+                    <div className="absolute top-2 left-2 bg-red-500/80 text-white px-2 py-1 rounded-md text-sm font-mono flex items-center gap-2">
+                      <div className="w-2 h-2 rounded-full bg-white animate-pulse"></div>
+                      <span>{formatDuration(recordingDuration)}</span>
+                    </div>
+                  )}
                   {!hasCameraPermission && (
                     <Alert variant="destructive" className="absolute w-auto m-4">
                       <VideoOff className="h-4 w-4" />
@@ -469,9 +506,16 @@ export default function InterviewPage() {
                       isRecording && 'text-red-500 animate-pulse'
                     )}
                   />
-                  <p className="text-sm text-muted-foreground">
-                    {isRecording ? 'Recording your answer...' : 'Get ready to speak'}
-                  </p>
+                  {isRecording ? (
+                    <div className="text-center">
+                      <p className="text-sm text-red-500">Recording your answer...</p>
+                      <p className="text-sm font-mono text-red-500">{formatDuration(recordingDuration)}</p>
+                    </div>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">
+                      Get ready to speak
+                    </p>
+                  )}
                 </div>
               )}
 
