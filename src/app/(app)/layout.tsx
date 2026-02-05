@@ -46,6 +46,7 @@ import PageHeader from '@/components/dashboard/page-header';
 import { useToast } from '@/hooks/use-toast';
 import { useDoc, useFirestore, useUser } from '@/firebase';
 import { doc } from 'firebase/firestore';
+import { cn } from '@/lib/utils';
 
 const navItems = [
   { href: '/dashboard', icon: LayoutGrid, label: 'Dashboard' },
@@ -126,7 +127,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             <div className="blur-[106px] h-32 bg-gradient-to-r from-cyan-400 to-sky-500"></div>
           </div>
           <div className="flex h-14 lg:h-[60px] items-center gap-4 px-6 z-10 shrink-0">
-            <SidebarTrigger />
+            <SidebarTrigger className={cn(pathname !== '/dashboard' && 'md:hidden')} />
             {pathname !== '/dashboard' && (
               <Button variant="ghost" size="icon" onClick={() => router.back()}>
                 <ArrowLeft className="h-5 w-5" />
