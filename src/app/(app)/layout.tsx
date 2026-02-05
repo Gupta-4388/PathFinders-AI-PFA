@@ -106,7 +106,14 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           </SidebarMenu>
         </SidebarContent>
         <SidebarFooter>
-          {/* Footer content can go here */}
+           <SidebarMenu>
+             <SidebarMenuItem>
+                <SidebarMenuButton onClick={handleSignOut} tooltip="Sign Out">
+                    <LogOut />
+                    <span>Sign Out</span>
+                </SidebarMenuButton>
+             </SidebarMenuItem>
+           </SidebarMenu>
         </SidebarFooter>
       </Sidebar>
       <SidebarInset>
@@ -118,23 +125,16 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             <div className="blur-[106px] h-56 bg-gradient-to-br from-primary to-purple-500"></div>
             <div className="blur-[106px] h-32 bg-gradient-to-r from-cyan-400 to-sky-500"></div>
           </div>
-          <header className="flex h-14 lg:h-[60px] items-center gap-4 border-b bg-card/50 px-6 sticky top-0 z-30">
-            <div className="flex items-center gap-4">
-              {pathname !== '/dashboard' && (
-                <Button variant="ghost" size="icon" onClick={() => router.back()}>
-                  <ArrowLeft className="h-5 w-5" />
-                </Button>
-              )}
-              <SidebarTrigger />
-              <PageHeader />
-            </div>
-            <div className="flex-1" />
-            <Button variant="outline" onClick={handleSignOut}>
-              <LogOut className="mr-2 h-4 w-4" />
-              Sign Out
-            </Button>
-          </header>
-          <main className="flex-1 overflow-auto p-4 md:p-6 lg:p-8 z-10">
+          <div className="flex h-14 lg:h-[60px] items-center gap-4 px-6 z-10 shrink-0">
+            <SidebarTrigger />
+            {pathname !== '/dashboard' && (
+              <Button variant="ghost" size="icon" onClick={() => router.back()}>
+                <ArrowLeft className="h-5 w-5" />
+              </Button>
+            )}
+            <PageHeader />
+          </div>
+          <main className="flex-1 overflow-auto p-4 md:p-6 lg:p-8 pt-0 z-10">
             {children}
           </main>
         </div>
