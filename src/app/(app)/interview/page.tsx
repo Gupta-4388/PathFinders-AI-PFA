@@ -60,11 +60,14 @@ export default function InterviewPage() {
   const [isRecording, setIsRecording] = useState(false);
   const [hasCameraPermission, setHasCameraPermission] = useState(false);
   const [recordingDuration, setRecordingDuration] = useState(0);
-
+  const [recordedMediaUrl, setRecordedMediaUrl] = useState<string | null>(null);
+  
   const videoRef = useRef<HTMLVideoElement>(null);
   const recognitionRef = useRef<SpeechRecognition | null>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
-
+  const streamRef = useRef<MediaStream | null>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const recordedChunksRef = useRef<Blob[]>([]);
 
   const { toast } = useToast();
   const { user } = useUser();
@@ -98,30 +101,38 @@ export default function InterviewPage() {
   }, [isRecording]);
 
   useEffect(() => {
-    if (interviewStarted && interviewMode === 'video') {
-      const getCameraPermission = async () => {
+    if (interviewStarted && (interviewMode === 'video' || interviewMode === 'audio')) {
+      const getMediaPermission = async () => {
         try {
           const stream = await navigator.mediaDevices.getUserMedia({
-            video: true,
+            video: interviewMode === 'video',
+            audio: true,
           });
-          setHasCameraPermission(true);
+          streamRef.current = stream;
 
-          if (videoRef.current) {
-            videoRef.current.srcObject = stream;
-            videoRef.current.play();
+          if (interviewMode === 'video') {
+            setHasCameraPermission(true);
+            if (videoRef.current) {
+              videoRef.current.srcObject = stream;
+              videoRef.current.play();
+            }
           }
         } catch (error) {
-          console.error('Error accessing camera:', error);
-          setHasCameraPermission(false);
+          console.error('Error accessing media devices:', error);
+          if (interviewMode === 'video') setHasCameraPermission(false);
           toast({
             variant: 'destructive',
-            title: 'Camera Access Denied',
-            description:
-              'Please enable camera permissions in your browser settings.',
+            title: 'Media Access Denied',
+            description: 'Please enable camera and microphone permissions in your browser settings.',
           });
         }
       };
-      getCameraPermission();
+      getMediaPermission();
+
+      return () => {
+        streamRef.current?.getTracks().forEach((track) => track.stop());
+        streamRef.current = null;
+      };
     }
   }, [interviewStarted, interviewMode, toast]);
 
@@ -201,26 +212,62 @@ export default function InterviewPage() {
   }, [domain, toast, userProfile]);
 
   const toggleRecording = () => {
-    if (!SpeechRecognition) {
-      toast({
-        variant: 'destructive',
-        title: 'Speech Recognition Not Supported',
-        description: 'Your browser does not support voice recording.',
-      });
-      return;
-    }
     if (isRecording) {
       recognitionRef.current?.stop();
+      mediaRecorderRef.current?.stop();
+      setIsRecording(false);
     } else {
+      if (recordedMediaUrl) {
+        URL.revokeObjectURL(recordedMediaUrl);
+      }
       setUserAnswer('');
-      recognitionRef.current?.start();
+      setRecordedMediaUrl(null);
+      recordedChunksRef.current = [];
+
+      if (!streamRef.current) {
+        toast({
+          variant: 'destructive',
+          title: 'Media stream not available',
+          description: 'Could not access camera or microphone. Please refresh and try again.',
+        });
+        return;
+      }
+      
+      try {
+        mediaRecorderRef.current = new MediaRecorder(streamRef.current);
+        mediaRecorderRef.current.ondataavailable = (event) => {
+          if (event.data.size > 0) {
+            recordedChunksRef.current.push(event.data);
+          }
+        };
+        mediaRecorderRef.current.onstop = () => {
+          const mimeType = interviewMode === 'video' ? 'video/webm' : 'audio/webm';
+          const blob = new Blob(recordedChunksRef.current, { type: mimeType });
+          const url = URL.createObjectURL(blob);
+          setRecordedMediaUrl(url);
+          recordedChunksRef.current = [];
+        };
+        
+        mediaRecorderRef.current.start();
+        if (recognitionRef.current) {
+          recognitionRef.current.start();
+        }
+        setIsRecording(true);
+      } catch (e) {
+        console.error("Failed to start media recorder:", e);
+        toast({
+            variant: "destructive",
+            title: "Recording Failed",
+            description: "Could not start recording. Check browser permissions.",
+        });
+      }
     }
-    setIsRecording(!isRecording);
   };
 
   const submitAnswer = async () => {
     if (isRecording) {
       recognitionRef.current?.stop();
+      mediaRecorderRef.current?.stop();
       setIsRecording(false);
     }
     if (!userAnswer.trim()) {
@@ -254,6 +301,10 @@ export default function InterviewPage() {
     setUserAnswer('');
     setAnalysis(null);
     setQuestionAudio(null);
+    if (recordedMediaUrl) {
+      URL.revokeObjectURL(recordedMediaUrl);
+      setRecordedMediaUrl(null);
+    }
     if (!userProfile?.resumeDataUri) return;
     try {
       const result = await mockInterviewWithRealtimeFeedback({
@@ -285,14 +336,22 @@ export default function InterviewPage() {
     setIsRecording(false);
     setHasCameraPermission(false);
 
-    // Stop camera stream
+    if (streamRef.current) {
+        streamRef.current.getTracks().forEach((track) => track.stop());
+        streamRef.current = null;
+    }
+
     if (videoRef.current?.srcObject) {
       const stream = videoRef.current.srcObject as MediaStream;
       stream.getTracks().forEach((track) => track.stop());
       videoRef.current.srcObject = null;
     }
 
-    // Stop speech recognition
+    if (recordedMediaUrl) {
+      URL.revokeObjectURL(recordedMediaUrl);
+      setRecordedMediaUrl(null);
+    }
+
     if (recognitionRef.current) {
       recognitionRef.current.stop();
     }
@@ -474,30 +533,37 @@ export default function InterviewPage() {
             <CardContent className="flex-grow flex flex-col gap-4">
               {interviewMode === 'video' && (
                 <div className="aspect-video bg-muted rounded-md flex items-center justify-center relative overflow-hidden">
-                  <video
-                    ref={videoRef}
-                    className="w-full h-full object-cover"
-                    autoPlay
-                    playsInline
-                    muted
-                  />
-                  {isRecording && (
-                    <div className="absolute top-2 left-2 bg-red-500/80 text-white px-2 py-1 rounded-md text-sm font-mono flex items-center gap-2">
-                      <div className="w-2 h-2 rounded-full bg-white animate-pulse"></div>
-                      <span>{formatDuration(recordingDuration)}</span>
-                    </div>
-                  )}
-                  {!hasCameraPermission && (
-                    <Alert variant="destructive" className="absolute w-auto m-4">
-                      <VideoOff className="h-4 w-4" />
-                      <AlertTitle>Camera Access Required</AlertTitle>
-                      <AlertDescription>
-                        Please allow camera access to use this feature.
-                      </AlertDescription>
-                    </Alert>
+                  {recordedMediaUrl && !isRecording ? (
+                    <video key={recordedMediaUrl} src={recordedMediaUrl} controls className="w-full h-full object-cover" autoPlay />
+                  ) : (
+                    <>
+                      <video
+                        ref={videoRef}
+                        className="w-full h-full object-cover"
+                        autoPlay
+                        playsInline
+                        muted
+                      />
+                      {isRecording && (
+                        <div className="absolute top-2 left-2 bg-red-500/80 text-white px-2 py-1 rounded-md text-sm font-mono flex items-center gap-2">
+                          <div className="w-2 h-2 rounded-full bg-white animate-pulse"></div>
+                          <span>{formatDuration(recordingDuration)}</span>
+                        </div>
+                      )}
+                      {!hasCameraPermission && (
+                        <Alert variant="destructive" className="absolute w-auto m-4">
+                          <VideoOff className="h-4 w-4" />
+                          <AlertTitle>Camera Access Required</AlertTitle>
+                          <AlertDescription>
+                            Please allow camera access to use this feature.
+                          </AlertDescription>
+                        </Alert>
+                      )}
+                    </>
                   )}
                 </div>
               )}
+
               {interviewMode === 'audio' && (
                 <div className="h-32 flex flex-col items-center justify-center bg-muted rounded-md gap-4">
                   <Mic
@@ -513,9 +579,16 @@ export default function InterviewPage() {
                     </div>
                   ) : (
                     <p className="text-sm text-muted-foreground">
-                      Get ready to speak
+                      {recordedMediaUrl ? 'Recording finished. Review below.' : 'Get ready to speak'}
                     </p>
                   )}
+                </div>
+              )}
+
+              {recordedMediaUrl && !isRecording && interviewMode === 'audio' && (
+                <div className="space-y-2 animate-fade-in-up">
+                    <Label>Review Your Answer</Label>
+                    <audio key={recordedMediaUrl} src={recordedMediaUrl} controls className="w-full" />
                 </div>
               )}
 
@@ -528,7 +601,7 @@ export default function InterviewPage() {
                 value={userAnswer}
                 onChange={(e) => setUserAnswer(e.target.value)}
                 className="w-full flex-grow min-h-[150px] text-base"
-                disabled={loading}
+                disabled={loading || isRecording}
               />
 
               <div className="flex justify-between items-center mt-2">
@@ -544,7 +617,7 @@ export default function InterviewPage() {
                       <>
                         <MicOff className="mr-2 text-red-500" /> Stop Recording
                       </>
-                    ) : userAnswer.trim() ? (
+                    ) : (recordedMediaUrl || userAnswer.trim()) ? (
                       <>
                         <RefreshCcw className="mr-2" /> Record Again
                       </>
@@ -579,3 +652,5 @@ export default function InterviewPage() {
     </div>
   );
 }
+
+    
