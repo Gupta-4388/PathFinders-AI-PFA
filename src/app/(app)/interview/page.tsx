@@ -12,6 +12,7 @@ import {
   ArrowRight,
   RefreshCcw,
   Keyboard,
+  X,
 } from 'lucide-react';
 import {
   mockInterviewWithRealtimeFeedback,
@@ -251,6 +252,34 @@ export default function InterviewPage() {
     }
   };
 
+  const endInterview = () => {
+    setInterviewStarted(false);
+    setCurrentQuestion('');
+    setQuestionAudio(null);
+    setUserAnswer('');
+    setAnalysis(null);
+    setLoading(false);
+    setIsRecording(false);
+    setHasCameraPermission(false);
+
+    // Stop camera stream
+    if (videoRef.current?.srcObject) {
+      const stream = videoRef.current.srcObject as MediaStream;
+      stream.getTracks().forEach((track) => track.stop());
+      videoRef.current.srcObject = null;
+    }
+
+    // Stop speech recognition
+    if (recognitionRef.current) {
+      recognitionRef.current.stop();
+    }
+
+    toast({
+      title: 'Interview Ended',
+      description: 'You have returned to the setup screen.',
+    });
+  };
+
   if (!interviewStarted) {
     return (
       <div className="flex justify-center items-center h-full animate-pop-in p-4 sm:p-0">
@@ -351,8 +380,12 @@ export default function InterviewPage() {
     <div className="w-full max-w-4xl mx-auto flex flex-col gap-6 animate-fade-in-up">
       {questionAudio && <audio src={questionAudio} autoPlay />}
       <Card className="transition-all duration-300 transform hover:scale-[1.01] border border-transparent hover:border-primary/50">
-        <CardHeader>
+        <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle className="text-xl font-semibold">Interview Question</CardTitle>
+          <Button variant="destructive" size="sm" onClick={endInterview}>
+            <X className="mr-2 h-4 w-4" />
+            End Interview
+          </Button>
         </CardHeader>
         <CardContent className="text-base text-muted-foreground min-h-[80px] flex items-center">
           {loading && !currentQuestion ? (
