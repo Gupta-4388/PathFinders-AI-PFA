@@ -156,8 +156,19 @@ export function AuthForm() {
       });
       router.push('/dashboard');
     } catch (error) {
+      const authError = error as AuthError;
+      // Don't show an error toast or log to console if the user closes the popup
+      if (
+        authError.code === 'auth/popup-closed-by-user' ||
+        authError.code === 'auth/cancelled-popup-request'
+      ) {
+        // This is an expected user action, not an error.
+        // We can simply return and do nothing.
+        return;
+      }
+      // For other errors, log them and show a toast.
       console.error('Google Sign-In Error:', error);
-      handleAuthError(error as AuthError);
+      handleAuthError(authError);
     }
   };
 
