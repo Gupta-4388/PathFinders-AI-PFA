@@ -36,8 +36,8 @@ import Logo from '@/components/logo';
 import { Button } from '@/components/ui/button';
 import PageHeader from '@/components/dashboard/page-header';
 import { useToast } from '@/hooks/use-toast';
-import { useAuth, useDoc, useFirestore, useUser } from '@/firebase';
-import { doc } from 'firebase/firestore';
+import { useAuth, useDoc, useFirestore, useUser, errorEmitter, FirestorePermissionError } from '@/firebase';
+import { doc, setDoc } from 'firebase/firestore';
 import { cn } from '@/lib/utils';
 import { signOut } from 'firebase/auth';
 
@@ -63,6 +63,45 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     [user, firestore]
   );
   const { data: userProfile } = useDoc<{ profilePicture?: string }>(userDocRef);
+
+  React.useEffect(() => {
+    if (user && userDocRef) {
+      const providerId = user.providerData?.[0]?.providerId;
+      
+      const userData: {
+        id: string;
+        email: string | null;
+        name: string | null;
+        profilePicture: string | null;
+        signUpMethod: string;
+        googleId?: string;
+      } = {
+        id: user.uid,
+        email: user.email,
+        name: user.displayName,
+        profilePicture: user.photoURL,
+        signUpMethod: providerId || 'unknown',
+      };
+
+      if (providerId === 'google.com') {
+          const googleUid = user.providerData.find(p => p.providerId === 'google.com')?.uid;
+          if (googleUid) {
+            userData.googleId = googleUid;
+          }
+      }
+
+      setDoc(userDocRef, userData, { merge: true })
+        .catch((error) => {
+          console.error("Error upserting user document:", error);
+          const permissionError = new FirestorePermissionError({
+            path: userDocRef.path,
+            operation: 'write',
+            requestResourceData: userData,
+          });
+          errorEmitter.emit('permission-error', permissionError);
+      });
+    }
+  }, [user, userDocRef]);
 
   React.useEffect(() => {
     if (!isUserLoading && !user) {
