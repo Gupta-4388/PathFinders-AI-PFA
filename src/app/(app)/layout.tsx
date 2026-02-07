@@ -92,7 +92,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
       setDoc(userDocRef, userData, { merge: true })
         .catch((error) => {
-          console.error("Error upserting user document:", error);
           const permissionError = new FirestorePermissionError({
             path: userDocRef.path,
             operation: 'write',
