@@ -23,9 +23,6 @@ import { useToast } from '@/hooks/use-toast';
 import {
   Card,
   CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription
 } from './ui/card';
 import {
   Form,
@@ -38,6 +35,7 @@ import {
 import { Separator } from './ui/separator';
 import Link from 'next/link';
 import { useAuth } from '@/firebase';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 const signInSchema = z.object({
   email: z.string().email({ message: 'Please enter a valid email.' }),
@@ -67,6 +65,8 @@ export function AuthForm() {
   const auth = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [activeTab, setActiveTab] = useState('sign-in');
+  const [submissionError, setSubmissionError] = useState<{ title: string; description: string } | null>(null);
+
 
   const signInForm = useForm<z.infer<typeof signInSchema>>({
     resolver: zodResolver(signInSchema),
@@ -108,7 +108,8 @@ export function AuthForm() {
           'This sign-in method is disabled. Please enable it in your Firebase project authentication settings.';
         break;
     }
-
+    
+    setSubmissionError({ title, description });
     toast({
       variant: 'destructive',
       title: title,
@@ -117,6 +118,7 @@ export function AuthForm() {
   };
 
   const onSignInSubmit = async (values: z.infer<typeof signInSchema>) => {
+    setSubmissionError(null);
     try {
       await signInWithEmailAndPassword(auth, values.email, values.password);
       toast({
@@ -130,6 +132,7 @@ export function AuthForm() {
   };
 
   const onSignUpSubmit = async (values: z.infer<typeof signUpSchema>) => {
+    setSubmissionError(null);
     try {
       await createUserWithEmailAndPassword(
         auth,
@@ -147,6 +150,7 @@ export function AuthForm() {
   };
 
   const handleGoogleSignIn = async () => {
+    setSubmissionError(null);
     const provider = new GoogleAuthProvider();
     try {
       await signInWithPopup(auth, provider);
@@ -157,17 +161,12 @@ export function AuthForm() {
       router.push('/dashboard');
     } catch (error) {
       const authError = error as AuthError;
-      // Don't show an error toast or log to console if the user closes the popup
       if (
         authError.code === 'auth/popup-closed-by-user' ||
         authError.code === 'auth/cancelled-popup-request'
       ) {
-        // This is an expected user action, not an error.
-        // We can simply return and do nothing.
         return;
       }
-      // For other errors, log them and show a toast.
-      console.error('Google Sign-In Error:', error);
       handleAuthError(authError);
     }
   };
@@ -175,6 +174,12 @@ export function AuthForm() {
   return (
     <Card className="border-0 shadow-none p-0">
       <CardContent className="p-0">
+        {submissionError && (
+          <Alert variant="destructive" className="mb-4">
+            <AlertTitle>{submissionError.title}</AlertTitle>
+            <AlertDescription>{submissionError.description}</AlertDescription>
+          </Alert>
+        )}
         <Tabs
           defaultValue="sign-in"
           value={activeTab}
