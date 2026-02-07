@@ -1,84 +1,162 @@
 /**
- * @fileoverview Firestore Security Rules for PathFinder AI application.
+ * This ruleset enforces a strict user-ownership security model for the PathFinder AI application.
  *
  * Core Philosophy:
- * This ruleset enforces a strict user-ownership model for user profiles
- * and manages OAuth provider data, ensuring that users can only access
- * their own information and that sensitive OAuth tokens are protected.
+ * Access is granted based on a user-centric, hierarchical data structure. Every authenticated user can
+ * create and manage their own data, but they are strictly prohibited from accessing, viewing, or modifying
+ * the data of any other user. The default security posture is to deny all access unless explicitly granted.
  *
  * Data Structure:
- * - /users/{userId}: Stores user profiles.
- * - /oauth_providers/{oauthProviderId}: Stores OAuth provider data.
+ * All user-specific data, including resumes, AI mentor feedback, and career dashboards, is organized
+ * in subcollections nested under the path `/users/{userId}`. This structure makes ownership clear and
+ * allows security rules to leverage the document path for efficient and secure authorization.
  *
  * Key Security Decisions:
- * - Users can only create, read, update, and delete their own user documents.
- * - OAuth provider data is secured by associating it with a specific user ID,
- *   ensuring that only the associated user can access the OAuth tokens.
- * - Read operations are allowed only for authenticated users accessing their own data.
- * - The `signUpMethod` field in the user document indicates the authentication provider used.
+ * - Strict Ownership: All data is private. A user can only access documents located within their own
+ *   data tree (i.e., where `{userId}` in the path matches their authenticated UID).
+ * - No Public Access: There are no globally readable collections.
+ * - User Enumeration Disabled: Listing documents from the top-level `/users` collection is explicitly
+ *   disallowed to protect user privacy and prevent data scraping.
+ * - Relational Integrity: On document creation, rules validate that the internal `userId` or `id` field
+ *   matches the `userId` from the document path, ensuring data consistency. These key relational fields
+
+ *   are enforced as immutable on update.
  *
  * Denormalization for Authorization:
- * The `userId` field in the `OAuthProvider` collection is denormalized to ensure that only the
- * associated user can access the OAuth tokens. This avoids the need for complex `get()` calls
- * in security rules.
+ * This ruleset leverages path-based authorization. By nesting all data under `/users/{userId}`, the user's
+ * ID is part of the path to every document they own. This eliminates the need for costly `get()` calls or
+ * denormalizing ownership fields just for security rules, leading to simpler, faster, and more secure logic.
  *
  * Structural Segregation:
- * User-specific data is stored under `/users/{userId}`, allowing rules to easily filter based on the
- * request's `auth.uid` without needing complex filtering logic.
+ * The data model naturally segregates each user's data into its own document tree. This is the most secure
+ * and performant way to manage private user data, as it makes it impossible for queries to accidentally
+ * leak data belonging to other users.
  */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    // -------------------------------------------------------------------------
+    // Helper Functions
+    // -------------------------------------------------------------------------
+
     /**
-     * @description Secures user profiles, ensuring users can only manage their own data.
-     * @path /users/{userId}
-     * @allow (create, update) - User with UID 'user123' can create or update their profile if request.auth.uid == 'user123'.
-     * @allow (get, delete) - User with UID 'user123' can access/modify their profile at /users/user123 if authenticated.
-     * @deny (create, update) - User with UID 'user456' cannot create or update a profile with ID 'user123'.
-     * @deny (get, delete) - User with UID 'user456' cannot access/modify the profile at /users/user123.
-     * @principle Enforces path-based ownership for user data.
+     * Checks if the user is authenticated.
      */
-    match /users/{userId} {
-      function isSignedIn() {
-        return request.auth != null;
-      }
-
-      function isOwner(userId) {
-        return isSignedIn() && request.auth.uid == userId;
-      }
-
-      allow read: if isOwner(userId);
-      allow write: if isOwner(userId);
+    function isSignedIn() {
+      return request.auth != null;
     }
 
     /**
-     * @description Secures OAuth provider data, linking tokens to specific users.
-     * @path /oauth_providers/{oauthProviderId}
-     * @allow (create) - User can create OAuth provider data if the userId matches their auth UID.
-     * @allow (get, update, delete) - User can manage OAuth provider data if the userId matches their auth UID.
-     * @deny (create) - User cannot create OAuth provider data for another user.
-     * @deny (get, update, delete) - User cannot manage OAuth provider data for another user.
-     * @principle Restricts access to OAuth tokens to the associated user.
+     * Checks if the currently authenticated user's UID matches the provided userId.
+     * This is the primary function for enforcing document ownership.
      */
-    match /oauth_providers/{oauthProviderId} {
-      function isSignedIn() {
-        return request.auth != null;
-      }
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
 
-      function isOwner(userId) {
-        return isSignedIn() && request.auth.uid == userId;
-      }
+    /**
+     * Checks for ownership on an existing document. Used for update and delete operations.
+     * Prevents modifying or deleting documents that do not exist.
+     */
+    function isExistingOwner(userId) {
+      return isOwner(userId) && resource != null;
+    }
+    
+    /**
+     * Validates that a user is creating their own root user document and that the
+     * internal 'id' field correctly matches their UID for relational integrity.
+     */
+    function isCreatingOwnUserDoc(userId) {
+      return isOwner(userId) && request.resource.data.id == userId;
+    }
 
-      function isExistingOwner(userId) {
-        return isOwner(userId) && resource != null;
-      }
+    /**
+     * Validates that a user is updating their own user document and that the
+     * critical, immutable 'id' field is not being changed.
+     */
+    function isMaintainingOwnUserDoc(userId) {
+      // On update, `request.resource.data` represents the final merged data.
+      // This rule ensures the `id` field remains unchanged.
+      return isExistingOwner(userId) && request.resource.data.id == resource.data.id;
+    }
+    
+    /**
+     * Validates that a user is creating a document in their own subcollection
+     * and that the internal 'userId' field correctly points back to them.
+     */
+    function isCreatingOwnSubDoc(userId) {
+      return isOwner(userId) && request.resource.data.userId == userId;
+    }
+    
+    /**
+     * Validates that a user is updating a document in their own subcollection
+     * and that the immutable 'userId' field is not being changed.
+     */
+    function isMaintainingOwnSubDoc(userId) {
+      // This rule ensures the relational link (`userId`) to the parent cannot be modified.
+      return isExistingOwner(userId) && request.resource.data.userId == resource.data.id;
+    }
 
-      allow get: if isOwner(resource.data.userId);
-      allow list: if false; // Listing OAuth providers is not allowed.
-      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
-      allow update: if isExistingOwner(resource.data.userId) && request.resource.data.userId == resource.data.userId;
-      allow delete: if isExistingOwner(resource.data.userId);
+    // -------------------------------------------------------------------------
+    // Collection Rules
+    // -------------------------------------------------------------------------
+
+    /**
+     * @description Controls access to a user's primary profile document.
+     * @path /users/{userId}
+     * @allow (create) An authenticated user can create their own user profile document.
+     * @deny (list) No user, authenticated or not, can list all documents in the `/users` collection.
+     * @principle Restricts access to a user's own data tree and prevents user enumeration.
+     */
+    match /users/{userId} {
+      allow get: if isOwner(userId);
+      allow list: if false;
+      allow create: if isCreatingOwnUserDoc(userId);
+      allow update: if isMaintainingOwnUserDoc(userId);
+      allow delete: if isExistingOwner(userId);
+    }
+
+    /**
+     * @description Controls access to a user's resume documents.
+     * @path /users/{userId}/resumes/{resumeId}
+     * @allow (get) An authenticated user can read a resume document they own.
+     * @deny (get) An authenticated user cannot read a resume document owned by another user.
+     * @principle Enforces strict ownership for all operations within a user's private subcollection.
+     */
+    match /users/{userId}/resumes/{resumeId} {
+      allow get, list: if isOwner(userId);
+      allow create: if isCreatingOwnSubDoc(userId);
+      allow update: if isMaintainingOwnSubDoc(userId);
+      allow delete: if isExistingOwner(userId);
+    }
+
+    /**
+     * @description Controls access to a user's AI Mentor data.
+     * @path /users/{userId}/aiMentors/{aiMentorId}
+     * @allow (create) An authenticated user can create an AI Mentor document in their own profile.
+     * @deny (update) An authenticated user cannot update an AI Mentor document owned by another user.
+     * @principle Enforces strict ownership for all operations within a user's private subcollection.
+     */
+    match /users/{userId}/aiMentors/{aiMentorId} {
+      allow get, list: if isOwner(userId);
+      allow create: if isCreatingOwnSubDoc(userId);
+      allow update: if isMaintainingOwnSubDoc(userId);
+      allow delete: if isExistingOwner(userId);
+    }
+
+    /**
+     * @description Controls access to a user's Career Dashboard data.
+     * @path /users/{userId}/careerDashboards/{careerDashboardId}
+     * @allow (delete) An authenticated user can delete a career dashboard they own.
+     * @deny (delete) An authenticated user cannot delete another user's career dashboard.
+     * @principle Enforces strict ownership for all operations within a user's private subcollection.
+     */
+    match /users/{userId}/careerDashboards/{careerDashboardId} {
+      allow get, list: if isOwner(userId);
+      allow create: if isCreatingOwnSubDoc(userId);
+      allow update: if isMaintainingOwnSubDoc(userId);
+      allow delete: if isExistingOwner(userId);
     }
   }
 }

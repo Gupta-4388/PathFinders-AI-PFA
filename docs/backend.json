@@ -1,107 +1,183 @@
-
 {
   "entities": {
     "User": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "User",
       "type": "object",
-      "description": "Represents a user of the PathFinder AI application.",
+      "description": "Represents a user within the PathFinder AI application.",
       "properties": {
         "id": {
           "type": "string",
-          "description": "Unique identifier for the User entity."
+          "description": "Unique identifier for the user entity."
+        },
+        "googleId": {
+          "type": "string",
+          "description": "The user's Google ID, obtained from Google authentication."
         },
         "email": {
           "type": "string",
-          "description": "User's email address.",
+          "description": "The user's email address.",
           "format": "email"
         },
-        "name": {
+        "displayName": {
           "type": "string",
-          "description": "User's full name."
+          "description": "The user's display name."
         },
-        "signUpMethod": {
+        "photoURL": {
           "type": "string",
-          "description": "The method used to sign up (e.g., 'google', 'email')."
-        },
-        "profilePicture": {
-          "type": "string",
-          "description": "URL of the user's profile picture.",
+          "description": "URL of the user's profile photo.",
           "format": "uri"
         },
-        "linkedInProfile": {
+        "resumeId": {
           "type": "string",
-          "description": "URL of the user's LinkedIn profile, if provided.",
-          "format": "uri"
+          "description": "Reference to Resume entity. (Relationship: User 1:1 Resume)"
         },
-        "naukriProfile": {
+        "aiMentorId": {
           "type": "string",
-          "description": "URL of the user's Naukri profile, if provided.",
-          "format": "uri"
+          "description": "Reference to AIMentor entity. (Relationship: User 1:1 AIMentor)"
         },
-        "careerPath": {
+        "careerDashboardId": {
           "type": "string",
-          "description": "The user's desired career path."
+          "description": "Reference to CareerDashboard entity. (Relationship: User 1:1 CareerDashboard)"
         }
       },
       "required": [
         "id",
+        "googleId",
         "email",
-        "name",
-        "signUpMethod"
+        "displayName"
       ]
     },
-    "OAuthProvider": {
+    "Resume": {
       "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "OAuthProvider",
+      "title": "Resume",
       "type": "object",
-      "description": "Stores data from OAuth providers like Google.",
+      "description": "Represents a user's resume, including parsed skills, projects, and analysis results.",
       "properties": {
         "id": {
           "type": "string",
-          "description": "Unique identifier for the OAuth Provider entity."
+          "description": "Unique identifier for the resume entity."
         },
         "userId": {
           "type": "string",
-          "description": "Reference to User. (Relationship: User 1:1 OAuthProvider)"
+          "description": "Reference to User. (Relationship: User 1:1 Resume)"
         },
-        "providerName": {
+        "rawText": {
           "type": "string",
-          "description": "Name of the OAuth provider (e.g., 'google')."
+          "description": "The raw text content of the uploaded resume."
         },
-        "providerUserId": {
-          "type": "string",
-          "description": "User ID from the OAuth provider."
+        "parsedSkills": {
+          "type": "array",
+          "description": "List of skills extracted from the resume.",
+          "items": {
+            "type": "string"
+          }
         },
-        "accessToken": {
-          "type": "string",
-          "description": "Access token from the OAuth provider."
+        "parsedProjects": {
+          "type": "array",
+          "description": "List of projects extracted from the resume.",
+          "items": {
+            "type": "string"
+          }
         },
-        "refreshToken": {
+        "analysisResults": {
           "type": "string",
-          "description": "Refresh token from the OAuth provider."
-        },
-        "expiryDate": {
-          "type": "string",
-          "description": "Expiration date and time of the access token.",
-          "format": "date-time"
+          "description": "AI-driven analysis results and improvement insights for the resume (JSON format)."
         }
       },
       "required": [
         "id",
         "userId",
-        "providerName",
-        "providerUserId",
-        "accessToken",
-        "expiryDate"
+        "rawText"
+      ]
+    },
+    "AIMentor": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "AIMentor",
+      "type": "object",
+      "description": "Represents the personalized career guidance and mentorship suggestions provided by the AI.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the AI Mentor entity."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to User. (Relationship: User 1:1 AIMentor)"
+        },
+        "careerGuidance": {
+          "type": "string",
+          "description": "Personalized career guidance from AI."
+        },
+        "mentorshipSuggestions": {
+          "type": "string",
+          "description": "Mentorship suggestions from AI."
+        },
+        "skillGrowthRoadmap": {
+          "type": "string",
+          "description": "Skill growth roadmap from AI."
+        },
+        "learningResources": {
+          "type": "array",
+          "description": "List of recommended learning resources (URLs).",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "id",
+        "userId"
+      ]
+    },
+    "CareerDashboard": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "CareerDashboard",
+      "type": "object",
+      "description": "Represents the user's career dashboard, visualizing skill gaps, growth paths, and job recommendations.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Career Dashboard entity."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to User. (Relationship: User 1:1 CareerDashboard)"
+        },
+        "recommendedRoles": {
+          "type": "array",
+          "description": "List of recommended job roles.",
+          "items": {
+            "type": "string"
+          }
+        },
+        "skillGaps": {
+          "type": "string",
+          "description": "Visualization data for skill gaps."
+        },
+        "growthPaths": {
+          "type": "string",
+          "description": "Visualization data for growth paths."
+        },
+        "salaryRanges": {
+          "type": "string",
+          "description": "Visualization data for salary ranges."
+        },
+        "learningTimeline": {
+          "type": "string",
+          "description": "Visualization data for the learning timeline."
+        }
+      },
+      "required": [
+        "id",
+        "userId"
       ]
     }
   },
   "auth": {
     "providers": [
       "password",
-      "anonymous",
-      "google.com"
+      "anonymous"
     ]
   },
   "firestore": {
@@ -113,32 +189,76 @@
           "schema": {
             "$ref": "#/backend/entities/User"
           },
-          "description": "Stores user profiles. Includes user's basic information. Uses path-based ownership for private user data.",
+          "description": "Stores user profile information. The `userId` is obtained from Firebase Authentication.",
           "params": [
             {
               "name": "userId",
-              "description": "The unique identifier for the user."
+              "description": "The unique identifier for the user, derived from Firebase Authentication's `uid`."
             }
           ]
         }
       },
       {
-        "path": "/oauth_providers/{oauthProviderId}",
+        "path": "/users/{userId}/resumes/{resumeId}",
         "definition": {
-          "entityName": "OAuthProvider",
+          "entityName": "Resume",
           "schema": {
-            "$ref": "#/backend/entities/OAuthProvider"
+            "$ref": "#/backend/entities/Resume"
           },
-          "description": "Stores OAuth provider data like access tokens and refresh tokens. Uses document ID for uniqueness.",
+          "description": "Stores resume data for a specific user. The `userId` links to the user who owns the resume.",
           "params": [
             {
-              "name": "oauthProviderId",
-              "description": "The unique identifier for the OAuth Provider."
+              "name": "userId",
+              "description": "The unique identifier for the user, derived from Firebase Authentication's `uid`."
+            },
+            {
+              "name": "resumeId",
+              "description": "The unique identifier for the resume."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/aiMentors/{aiMentorId}",
+        "definition": {
+          "entityName": "AIMentor",
+          "schema": {
+            "$ref": "#/backend/entities/AIMentor"
+          },
+          "description": "Stores AI mentor data for a specific user. The `userId` links to the user who owns the AI mentor data.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier for the user, derived from Firebase Authentication's `uid`."
+            },
+            {
+              "name": "aiMentorId",
+              "description": "The unique identifier for the AI mentor data."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/careerDashboards/{careerDashboardId}",
+        "definition": {
+          "entityName": "CareerDashboard",
+          "schema": {
+            "$ref": "#/backend/entities/CareerDashboard"
+          },
+          "description": "Stores career dashboard data for a specific user. The `userId` links to the user who owns the career dashboard data.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier for the user, derived from Firebase Authentication's `uid`."
+            },
+            {
+              "name": "careerDashboardId",
+              "description": "The unique identifier for the career dashboard data."
             }
           ]
         }
       }
     ],
-    "reasoning": "This Firestore data structure is designed to support user authentication with Google, while adhering to the principles of Authorization Independence, Structural Segregation, Access Modeling, and Data Clarity. The key strategy is to denormalize relevant authorization data to avoid `get()` calls in security rules, ensuring atomic operations and easier debugging.\n\n1.  **Users Collection:** Stores user profiles with basic information. The `signUpMethod` field indicates the authentication provider used (google, email).\n2.  **OAuthProviders Collection:**  This collection stores the OAuth access and refresh tokens of the users. The `userId` field points to the User ID. A `providerName` indicates which service the tokens belong to.\n\n**Authorization Independence:** Authorization independence is achieved because the `User` document contains the `id`, `email`, `name`, and `signUpMethod` fields.\n\n**QAPs (Rules are not Filters):** The design supports secure `list` operations by ensuring that collections contain documents with homogeneous security postures. For example, user-specific data is stored under `/users/{userId}`, allowing rules to easily filter based on the request's `auth.uid` without needing complex filtering logic."
+    "reasoning": "The Firestore structure is designed to be secure, scalable, and easily debuggable, adhering to the core principles of Authorization Independence, Clarity of Intent, DBAC (Database-Based Access Control), and QAPs (Rules are not Filters).  Since the User document contains all the IDs for associated entities like `Resume`, `AIMentor`, and `CareerDashboard`, all the data required to build the dashboard can be retrieved from the `/users/{userId}` document. The key design strategy is to use hierarchical paths for user-owned data, enabling straightforward ownership-based security rules without relying on complex `get()` calls in security rules (Authorization Independence). Each top-level entity is directly owned by a user via a hierarchical path (e.g., `/users/{userId}/resumes/{resumeId}`), eliminating the need to denormalize authorization data, and facilitating simple, secure `list` operations. This design supports secure data access, with each user having sole access to their own data, including resume, AI mentor, and career dashboard information. This segregation inherently satisfies QAPs. The use of path-based ownership avoids the complexity of managing shared access or roles, streamlining the security rules and making them more maintainable."
   }
 }
