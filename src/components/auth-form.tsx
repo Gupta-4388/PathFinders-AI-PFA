@@ -2,7 +2,6 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -13,6 +12,7 @@ import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   AuthError,
+  updateProfile,
 } from 'firebase/auth';
 
 import { Button } from '@/components/ui/button';
@@ -32,7 +32,6 @@ import {
   FormLabel,
   FormMessage,
 } from './ui/form';
-import { Separator } from './ui/separator';
 import Link from 'next/link';
 import { useAuth } from '@/firebase';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -60,7 +59,6 @@ const GoogleIcon = () => (
 );
 
 export function AuthForm() {
-  const router = useRouter();
   const { toast } = useToast();
   const auth = useAuth();
   const [showPassword, setShowPassword] = useState(false);
@@ -96,7 +94,7 @@ export function AuthForm() {
         break;
       case 'auth/weak-password':
         title = 'Weak Password';
-        description = 'The password must be at least 6 characters long.';
+        description = 'The password must be at least 8 characters long.';
         break;
       case 'auth/invalid-email':
         title = 'Invalid Email';
@@ -125,7 +123,7 @@ export function AuthForm() {
         title: 'Signed In',
         description: 'Welcome back! You have been successfully signed in.',
       });
-      router.push('/dashboard');
+      window.location.assign('/dashboard');
     } catch (error) {
       handleAuthError(error as AuthError);
     }
@@ -134,16 +132,20 @@ export function AuthForm() {
   const onSignUpSubmit = async (values: z.infer<typeof signUpSchema>) => {
     setSubmissionError(null);
     try {
-      await createUserWithEmailAndPassword(
+      const userCredential = await createUserWithEmailAndPassword(
         auth,
         values.email,
         values.password
       );
+      await updateProfile(userCredential.user, {
+        displayName: values.name,
+      });
+
       toast({
         title: 'Account Created',
         description: 'Welcome! Your account has been created successfully.',
       });
-      router.push('/dashboard');
+      window.location.assign('/dashboard');
     } catch (error) {
       handleAuthError(error as AuthError);
     }
@@ -158,7 +160,7 @@ export function AuthForm() {
         title: 'Signed In with Google',
         description: 'You have been successfully signed in.',
       });
-      router.push('/dashboard');
+      window.location.assign('/dashboard');
     } catch (error) {
       const authError = error as AuthError;
       if (

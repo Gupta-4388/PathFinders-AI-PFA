@@ -2,13 +2,35 @@
 'use client';
 
 import Link from 'next/link';
-import { ArrowRight, Bot, FileText, Briefcase, TrendingUp, BrainCircuit } from 'lucide-react';
+import { ArrowRight, Bot, FileText, Briefcase, TrendingUp, BrainCircuit, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Logo from '@/components/logo';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { AuthForm } from '@/components/auth-form';
+import { useUser } from '@/firebase';
+import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
 
 export default function Home() {
+  const { user, isUserLoading } = useUser();
+  const router = useRouter();
+
+  useEffect(() => {
+    // If the user is logged in, redirect to the dashboard.
+    if (!isUserLoading && user) {
+      router.push('/dashboard');
+    }
+  }, [user, isUserLoading, router]);
+
+  // While checking auth state, show a loader to prevent flicker and layout shifts.
+  if (isUserLoading || user) {
+    return (
+      <div className="flex h-screen w-full items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col min-h-screen">
       <header className="container mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">

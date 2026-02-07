@@ -12,6 +12,7 @@ import {
   FileText,
   LayoutGrid,
   Lightbulb,
+  Loader2,
   LogOut,
   MessageSquare,
   Settings,
@@ -33,20 +34,12 @@ import {
 } from '@/components/ui/sidebar';
 import Logo from '@/components/logo';
 import { Button } from '@/components/ui/button';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import PageHeader from '@/components/dashboard/page-header';
 import { useToast } from '@/hooks/use-toast';
-import { useDoc, useFirestore, useUser } from '@/firebase';
+import { useAuth, useDoc, useFirestore, useUser } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import { cn } from '@/lib/utils';
+import { signOut } from 'firebase/auth';
 
 const navItems = [
   { href: '/dashboard', icon: LayoutGrid, label: 'Dashboard' },
@@ -61,7 +54,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const { toast } = useToast();
-  const { user } = useUser();
+  const { user, isUserLoading } = useUser();
+  const auth = useAuth();
   const firestore = useFirestore();
 
   const userDocRef = React.useMemo(
@@ -70,15 +64,38 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   );
   const { data: userProfile } = useDoc<{ profilePicture?: string }>(userDocRef);
 
+  React.useEffect(() => {
+    if (!isUserLoading && !user) {
+      router.push('/');
+    }
+  }, [user, isUserLoading, router]);
+
   const handleSignOut = () => {
-    localStorage.clear();
-    toast({
-      title: 'Signed Out',
-      description: 'You have been successfully signed out.',
-    });
-    router.push('/');
+    signOut(auth)
+      .then(() => {
+        localStorage.clear();
+        toast({
+          title: 'Signed Out',
+          description: 'You have been successfully signed out.',
+        });
+        router.push('/');
+      })
+      .catch((error) => {
+        toast({
+          variant: 'destructive',
+          title: 'Sign Out Failed',
+          description: 'An unexpected error occurred. Please try again.',
+        });
+      });
   };
 
+  if (isUserLoading || !user) {
+    return (
+      <div className="flex h-screen w-full items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <SidebarProvider>

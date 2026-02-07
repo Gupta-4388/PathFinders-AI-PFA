@@ -18,10 +18,11 @@ import { useToast } from '@/hooks/use-toast';
 import { ThemeToggle } from '@/components/settings/theme-toggle';
 import { File as FileIcon, LogOut, Upload, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useUser, useFirestore, useMemoFirebase } from '@/firebase';
+import { useUser, useFirestore, useMemoFirebase, useAuth } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import { useDoc } from '@/firebase/firestore/use-doc';
 import { setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+import { signOut } from 'firebase/auth';
 
 type UserProfile = {
   name?: string;
@@ -36,6 +37,7 @@ export default function SettingsPage() {
   const { toast } = useToast();
   const router = useRouter();
   const { user } = useUser();
+  const auth = useAuth();
   const firestore = useFirestore();
 
   const userDocRef = useMemoFirebase(
@@ -176,12 +178,20 @@ export default function SettingsPage() {
   };
 
   const handleSignOut = () => {
-    localStorage.clear();
-    toast({
-      title: 'Signed Out',
-      description: 'You have been successfully signed out.',
+    signOut(auth).then(() => {
+      localStorage.clear();
+      toast({
+        title: 'Signed Out',
+        description: 'You have been successfully signed out.',
+      });
+      router.push('/');
+    }).catch((error) => {
+        toast({
+            variant: 'destructive',
+            title: 'Sign Out Failed',
+            description: 'An unexpected error occurred. Please try again.',
+        });
     });
-    router.push('/');
   };
 
 
