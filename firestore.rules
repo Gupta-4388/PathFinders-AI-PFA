@@ -17,9 +17,8 @@
  * - No Public Access: There are no globally readable collections.
  * - User Enumeration Disabled: Listing documents from the top-level `/users` collection is explicitly
  *   disallowed to protect user privacy and prevent data scraping.
- * - Relational Integrity: On document creation, rules validate that the internal `userId` or `id` field
- *   matches the `userId` from the document path, ensuring data consistency. These key relational fields
- *   are enforced as immutable on update.
+ * - Relational Integrity: On document creation or update, rules validate that the internal `userId` or `id` field
+ *   matches the `userId` from the document path, ensuring data consistency and immutability.
  *
  * Denormalization for Authorization:
  * This ruleset leverages path-based authorization. By nesting all data under `/users/{userId}`, the user's
@@ -70,18 +69,14 @@ service cloud.firestore {
      * @description Controls access to a user's primary profile document.
      * @path /users/{userId}
      * @allow (get) An authenticated user can read their own document.
-     * @allow (write) An authenticated user can create or update their own document, but cannot change the 'id' field.
+     * @allow (write) An authenticated user can create or update their own document. The 'id' field must always match the user's UID.
      * @deny (list) No user, authenticated or not, can list all documents in the `/users` collection.
      * @principle Restricts access to a user's own data tree and prevents user enumeration.
      */
     match /users/{userId} {
       allow get: if isOwner(userId);
       allow list: if false;
-      allow write: if isOwner(userId) &&
-                      // On create, the new doc's `id` must match the user's auth UID.
-                      (resource == null && request.resource.data.id == userId) ||
-                      // On update, the doc's `id` field must not be changed.
-                      (resource != null && request.resource.data.id == resource.data.id);
+      allow write: if isOwner(userId) && request.resource.data.id == userId;
       allow delete: if isExistingOwner(userId);
     }
 
@@ -89,16 +84,12 @@ service cloud.firestore {
      * @description Controls access to a user's resume documents.
      * @path /users/{userId}/resumes/{resumeId}
      * @allow (get, list) An authenticated user can read and list their own resume documents.
-     * @allow (write) An authenticated user can create or update their own resume document, but cannot change the 'userId' field.
+     * @allow (write) An authenticated user can create or update their own resume document. The 'userId' field must always match their UID.
      * @principle Enforces strict ownership for all operations within a user's private subcollection.
      */
     match /users/{userId}/resumes/{resumeId} {
       allow get, list: if isOwner(userId);
-      allow write: if isOwner(userId) &&
-                      // On create, the new sub-doc's `userId` must match the parent user's ID.
-                      (resource == null && request.resource.data.userId == userId) ||
-                      // On update, the sub-doc's `userId` field must not be changed.
-                      (resource != null && request.resource.data.userId == resource.data.userId);
+      allow write: if isOwner(userId) && request.resource.data.userId == userId;
       allow delete: if isExistingOwner(userId);
     }
 
@@ -106,16 +97,12 @@ service cloud.firestore {
      * @description Controls access to a user's AI Mentor data.
      * @path /users/{userId}/aiMentors/{aiMentorId}
      * @allow (get, list) An authenticated user can read and list their own AI Mentor documents.
-     * @allow (write) An authenticated user can create or update their own AI Mentor document, but cannot change the 'userId' field.
+     * @allow (write) An authenticated user can create or update their own AI Mentor document. The 'userId' field must always match their UID.
      * @principle Enforces strict ownership for all operations within a user's private subcollection.
      */
     match /users/{userId}/aiMentors/{aiMentorId} {
       allow get, list: if isOwner(userId);
-      allow write: if isOwner(userId) &&
-                      // On create, the new sub-doc's `userId` must match the parent user's ID.
-                      (resource == null && request.resource.data.userId == userId) ||
-                      // On update, the sub-doc's `userId` field must not be changed.
-                      (resource != null && request.resource.data.userId == resource.data.userId);
+      allow write: if isOwner(userId) && request.resource.data.userId == userId;
       allow delete: if isExistingOwner(userId);
     }
 
@@ -123,16 +110,12 @@ service cloud.firestore {
      * @description Controls access to a user's Career Dashboard data.
      * @path /users/{userId}/careerDashboards/{careerDashboardId}
      * @allow (get, list) An authenticated user can read and list their own career dashboard documents.
-     * @allow (write) An authenticated user can create or update their own career dashboard, but cannot change the 'userId' field.
+     * @allow (write) An authenticated user can create or update their own career dashboard. The 'userId' field must always match their UID.
      * @principle Enforces strict ownership for all operations within a user's private subcollection.
      */
     match /users/{userId}/careerDashboards/{careerDashboardId} {
       allow get, list: if isOwner(userId);
-      allow write: if isOwner(userId) &&
-                      // On create, the new sub-doc's `userId` must match the parent user's ID.
-                      (resource == null && request.resource.data.userId == userId) ||
-                      // On update, the sub-doc's `userId` field must not be changed.
-                      (resource != null && request.resource.data.userId == resource.data.userId);
+      allow write: if isOwner(userId) && request.resource.data.userId == userId;
       allow delete: if isExistingOwner(userId);
     }
   }
