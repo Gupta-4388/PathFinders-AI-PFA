@@ -10,6 +10,7 @@ import { AuthForm } from '@/components/auth-form';
 import { useUser } from '@/firebase';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
+import FlipCard from '@/components/flip-card';
 
 export default function Home() {
   const { user, isUserLoading } = useUser();
@@ -108,32 +109,32 @@ export default function Home() {
               </p>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              <FeatureCard
+              <FlipCard
                 icon={<FileText className="h-8 w-8 text-accent" />}
                 title="Resume Analyzer"
                 description="Upload and analyze your resume to identify skills, projects, and get AI-driven improvement insights."
               />
-              <FeatureCard
+              <FlipCard
                 icon={<Bot className="h-8 w-8 text-accent" />}
                 title="AI Mentor"
                 description="Receive personalized career guidance, mentorship suggestions, and skill growth roadmaps from our AI chatbot."
               />
-              <FeatureCard
+              <FlipCard
                 icon={<Briefcase className="h-8 w-8 text-accent" />}
                 title="Career Dashboard"
                 description="Discover recommended roles based on your resume, and visualize skill gaps, growth paths, and salary ranges."
               />
-              <FeatureCard
+              <FlipCard
                 icon={<TrendingUp className="h-8 w-8 text-accent" />}
                 title="Job Market Trends"
                 description="Visualize current job trends, in-demand skills, and salary benchmarks with dynamic charts and graphs."
               />
-              <FeatureCard
+              <FlipCard
                 icon={<BrainCircuit className="h-8 w-8 text-accent" />}
                 title="Mock Interview Simulator"
                 description="Practice for interviews with AI-generated questions and receive real-time analysis of your performance."
               />
-               <FeatureCard
+               <FlipCard
                 icon={<ArrowRight className="h-8 w-8 text-accent" />}
                 title="And Much More"
                 description="We're constantly adding new features to help you succeed in your career."
@@ -150,11 +151,3 @@ export default function Home() {
     </div>
   );
 }
-
-const FeatureCard = ({ icon, title, description }: { icon: React.ReactNode, title: string, description: string }) => (
-  <div className="p-8 bg-card rounded-lg shadow-sm border border-transparent text-left transform transition-all duration-300 hover:scale-105 hover:shadow-lg hover:border-accent group">
-    <div className="mb-4 text-accent transition-colors duration-300 group-hover:text-primary">{icon}</div>
-    <h3 className="text-xl font-bold mb-2">{title}</h3>
-    <p className="text-muted-foreground">{description}</p>
-  </div>
-);
