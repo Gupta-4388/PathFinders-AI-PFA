@@ -6,7 +6,7 @@ import { ScriptProps } from 'next/script';
 import { FirebaseClientProvider } from '@/firebase/client-provider';
 
 export const metadata: Metadata = {
-  title: 'PathFinder AI',
+  title: 'PathFinders AI',
   description: 'Your personal AI-powered career navigator',
 };
 

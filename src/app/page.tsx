@@ -56,7 +56,7 @@ export default function Home() {
             <DialogContent className="sm:max-w-[425px]">
                <DialogHeader>
                 <DialogTitle>Create an Account</DialogTitle>
-                <DialogDescription>Join PathFinder AI to start your journey.</DialogDescription>
+                <DialogDescription>Join PathFinders AI to start your journey.</DialogDescription>
               </DialogHeader>
               <AuthForm />
             </DialogContent>
@@ -78,7 +78,7 @@ export default function Home() {
                 Your Career, Amplified by AI
               </h1>
               <p className="mt-6 text-lg text-muted-foreground max-w-xl mx-auto">
-                PathFinder AI is your intelligent partner for career growth. Analyze skills, practice interviews, and discover your perfect career path.
+                PathFinders AI is your intelligent partner for career growth. Analyze skills, practice interviews, and discover your perfect career path.
               </p>
               <div className="mt-8 flex justify-center gap-4">
                 <Dialog>
@@ -89,7 +89,7 @@ export default function Home() {
                   </DialogTrigger>
                   <DialogContent className="sm:max-w-[425px]">
                     <DialogHeader>
-                      <DialogTitle>Welcome to PathFinder AI</DialogTitle>
+                      <DialogTitle>Welcome to PathFinders AI</DialogTitle>
                       <DialogDescription>Sign in or create an account to get started.</DialogDescription>
                     </DialogHeader>
                     <AuthForm />
@@ -105,7 +105,7 @@ export default function Home() {
             <div className="text-center mb-12">
               <h2 className="text-3xl md:text-4xl font-bold">An Entire Career Toolkit</h2>
               <p className="mt-4 text-muted-foreground max-w-2xl mx-auto">
-                From resume to interview, PathFinder AI provides the tools you need to succeed in today's competitive job market.
+                From resume to interview, PathFinders AI provides the tools you need to succeed in today's competitive job market.
               </p>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -145,7 +145,7 @@ export default function Home() {
       </main>
       <footer className="py-6 bg-background">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 text-center text-muted-foreground">
-          <p>&copy; {new Date().getFullYear()} PathFinder AI. All rights reserved.</p>
+          <p>&copy; {new Date().getFullYear()} PathFinders AI. All rights reserved.</p>
         </div>
       </footer>
     </div>
