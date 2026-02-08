@@ -34,6 +34,16 @@ const LocationDataSchema = z.object({
   openings: z.number().describe('The number of open tech positions in that location.'),
 });
 
+const SkillDemandSchema = z.object({
+  skill: z.string().describe('The name of the skill.'),
+  score: z.number().describe('A score from 1-100 indicating the frequency/demand for this skill.'),
+});
+
+const SalaryHistorySchema = z.object({
+  year: z.string().describe('The year.'),
+  salary: z.number().describe('The representative average annual salary for that year.'),
+});
+
 const GetJobTrendsOutputSchema = z.object({
   salaryByExperience: z
     .array(SalaryByExperienceSchema)
@@ -46,6 +56,14 @@ const GetJobTrendsOutputSchema = z.object({
   jobOpeningsByLocation: z
     .array(LocationDataSchema)
     .describe('A list of job openings in key tech hubs.'),
+  topSkills: z
+    .array(SkillDemandSchema)
+    .length(8)
+    .describe('The top 8 most in-demand skills for the current tech market or specific role.'),
+  salaryTrends: z
+    .array(SalaryHistorySchema)
+    .length(5)
+    .describe('The estimated average salary trend for the last 5 years for this role or general tech.'),
 });
 export type GetJobTrendsOutput = z.infer<typeof GetJobTrendsOutputSchema>;
 
@@ -81,12 +99,14 @@ const getJobTrendsPrompt = ai.definePrompt({
     {{/each}}
   {{/if}}
 
-  Provide current and accurate job market trend data. If a specific role was requested, ensure the first entry in your data strictly represents that role. For the remaining entries, use: Software Engineer, Data Scientist, Product Manager, DevOps Engineer, UX/UI Designer, or Cybersecurity Analyst as relevant.
+  Provide current and accurate job market trend data. If a specific role was requested, ensure the first entry in your data strictly represents that role.
 
   Provide the following:
-  1. **Salary by Experience**: For each role, provide the current average annual salary (USD) for "Entry-Level", "Mid-Level", and "Senior-Level".
-  2. **Market Demand**: Provide a demand score (1-100) for each role.
-  3. **Job Openings by Location**: Provide approximate current open positions in 5 major global tech hubs (e.g., Bengaluru, San Francisco, London, Hyderabad, Singapore).`,
+  1. **Salary by Experience**: For each role, provide current average annual USD salary for "Entry-Level", "Mid-Level", and "Senior-Level".
+  2. **Market Demand**: Provide a demand score (1-100) for key roles.
+  3. **Job Openings by Location**: Current open positions in 5 major global tech hubs.
+  4. **Top Skills**: Identify the 8 most requested skills in the job descriptions provided or for the role generally.
+  5. **Salary Trends**: Based on your knowledge, provide an estimated trend of average salaries for the last 5 years (2020-2024).`,
 });
 
 const getJobTrendsFlow = ai.defineFlow(

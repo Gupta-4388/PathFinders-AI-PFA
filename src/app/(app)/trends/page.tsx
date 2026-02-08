@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -8,6 +7,9 @@ import {
   PieChart as PieChartIcon,
   Search,
   TrendingUp,
+  BrainCircuit,
+  MapPin,
+  LineChart as LineChartIcon,
 } from 'lucide-react';
 import {
   Bar,
@@ -15,10 +17,13 @@ import {
   CartesianGrid,
   Cell,
   Legend,
+  Line,
+  LineChart,
   Pie,
   PieChart,
   XAxis,
   YAxis,
+  ResponsiveContainer,
 } from 'recharts';
 
 import {
@@ -49,7 +54,9 @@ const chartColors = [
   'hsl(var(--chart-3))',
   'hsl(var(--chart-4))',
   'hsl(var(--chart-5))',
+  'hsl(var(--chart-1))',
   'hsl(var(--chart-2))',
+  'hsl(var(--chart-3))',
 ];
 
 export default function TrendsPage() {
@@ -116,7 +123,7 @@ export default function TrendsPage() {
             <div>
               <CardTitle className="text-2xl">Market Intelligence</CardTitle>
               <CardDescription className="text-base">
-                Real-time data from Adzuna analyzed by AI to give you the competitive edge.
+                Real-time data analyzed by AI to give you the competitive edge.
               </CardDescription>
             </div>
             <form onSubmit={handleSearch} className="flex w-full md:max-w-sm items-center space-x-2">
@@ -154,7 +161,7 @@ export default function TrendsPage() {
                 Salary Benchmarks {activeRole && <span className="text-primary">: {activeRole}</span>}
               </CardTitle>
               <CardDescription>
-                Estimated annual salary (USD) based on experience levels across key roles.
+                Annual salary range (USD) across key roles.
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -204,11 +211,81 @@ export default function TrendsPage() {
 
           <Card>
             <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <LineChartIcon className="h-5 w-5 text-primary" />
+                Salary Growth Trends
+              </CardTitle>
+              <CardDescription>
+                Representative average salary progression (2020-2024).
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ChartContainer config={{}} className="h-[300px] w-full">
+                <LineChart data={trendsData.salaryTrends}>
+                  <CartesianGrid vertical={false} strokeDasharray="3 3" />
+                  <XAxis dataKey="year" axisLine={false} tickLine={false} tickMargin={8} />
+                  <YAxis tickFormatter={formatCurrency} axisLine={false} tickLine={false} width={80} />
+                  <ChartTooltip
+                    content={
+                      <ChartTooltipContent
+                        formatter={(value) => formatCurrency(value as number)}
+                        indicator="line"
+                      />
+                    }
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="salary"
+                    stroke="hsl(var(--primary))"
+                    strokeWidth={3}
+                    dot={{ fill: 'hsl(var(--primary))', r: 4 }}
+                    activeDot={{ r: 6 }}
+                  />
+                </LineChart>
+              </ChartContainer>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <BrainCircuit className="h-5 w-5 text-primary" />
+                Most In-Demand Skills
+              </CardTitle>
+              <CardDescription>
+                Top technical skills mentioned in active listings.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ChartContainer config={{}} className="h-[300px] w-full">
+                <BarChart data={trendsData.topSkills} layout="vertical" margin={{ left: 20 }}>
+                  <CartesianGrid horizontal={false} strokeDasharray="3 3" />
+                  <XAxis type="number" hide />
+                  <YAxis
+                    dataKey="skill"
+                    type="category"
+                    tickLine={false}
+                    axisLine={false}
+                    width={120}
+                    fontSize={12}
+                  />
+                  <ChartTooltip content={<ChartTooltipContent indicator="line" />} />
+                  <Bar dataKey="score" fill="hsl(var(--accent))" radius={[0, 4, 4, 0]} />
+                </BarChart>
+              </ChartContainer>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
               <div className="flex justify-between items-start">
                 <div>
-                  <CardTitle>Market Demand Index</CardTitle>
+                  <CardTitle className="flex items-center gap-2">
+                    <TrendingUp className="h-5 w-5 text-primary" />
+                    Market Demand Index
+                  </CardTitle>
                   <CardDescription>
-                    Role popularity score (1-100) based on current job listings.
+                    Role popularity score (1-100) based on listing volume.
                   </CardDescription>
                 </div>
                 <RadioGroup
@@ -238,7 +315,7 @@ export default function TrendsPage() {
               </div>
             </CardHeader>
             <CardContent>
-              <ChartContainer config={{}} className="h-[400px] w-full">
+              <ChartContainer config={{}} className="h-[350px] w-full">
                 {demandChartType === 'bar' ? (
                   <BarChart
                     data={trendsData.marketDemand}
@@ -296,9 +373,12 @@ export default function TrendsPage() {
             <CardHeader>
               <div className="flex justify-between items-start">
                 <div>
-                  <CardTitle>Opportunities by Location</CardTitle>
+                  <CardTitle className="flex items-center gap-2">
+                    <MapPin className="h-5 w-5 text-primary" />
+                    Availability by Location
+                  </CardTitle>
                   <CardDescription>
-                    Live pulse of job availability in global tech hubs.
+                    Job availability in global tech hubs.
                   </CardDescription>
                 </div>
                 <RadioGroup
@@ -328,7 +408,7 @@ export default function TrendsPage() {
               </div>
             </CardHeader>
             <CardContent>
-              <ChartContainer config={{}} className="h-[400px] w-full">
+              <ChartContainer config={{}} className="h-[350px] w-full">
                 {locationChartType === 'bar' ? (
                   <BarChart
                     data={trendsData.jobOpeningsByLocation}
@@ -357,7 +437,7 @@ export default function TrendsPage() {
                     />
                     <Bar
                       dataKey="openings"
-                      fill="hsl(var(--accent))"
+                      fill="hsl(var(--chart-4))"
                       radius={[0, 4, 4, 0]}
                     />
                   </BarChart>
