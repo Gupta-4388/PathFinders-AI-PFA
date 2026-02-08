@@ -132,7 +132,7 @@ export default function Home() {
               <FlipCard
                 icon={
                   <img
-                    src="https://github.com/Gupta-4388/PFA-logo/blob/main/PFA-Mock.png?raw=true"
+                    src="https://github.com/Gupta-4388/PFA-logo/blob/main/PFA-Mock(!).png?raw=true"
                     alt="Mock Interview Simulator Logo"
                     className="h-8 w-8 object-contain"
                   />
