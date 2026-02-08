@@ -172,7 +172,16 @@ export function AuthForm() {
     setIsResetting(true);
     setSubmissionError(null);
     try {
-        await sendPasswordResetEmail(auth, values.email);
+        // Explicitly specify the redirect URL for the default Firebase hosted UI.
+        // This URL is where the user will be redirected (via a 'Continue' button)
+        // after they have successfully reset their password on the Firebase hosted page.
+        // Using window.location.origin ensures the redirect works in both preview and production.
+        const actionCodeSettings = {
+          url: window.location.origin,
+          handleCodeInApp: false,
+        };
+
+        await sendPasswordResetEmail(auth, values.email, actionCodeSettings);
         
         toast({
             title: 'Success',
@@ -183,6 +192,7 @@ export function AuthForm() {
         forgotPasswordForm.reset();
     } catch (error) {
         const authError = error as AuthError;
+        // Security: To prevent email enumeration, we show a success message even if the user is not found.
         if (authError.code === 'auth/user-not-found') {
           toast({
               title: 'Success',
