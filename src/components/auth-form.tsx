@@ -108,8 +108,7 @@ export function AuthForm() {
         break;
       case 'auth/email-already-in-use':
         title = 'Email Already in Use';
-        description =
-          'This email address is already associated with an account.';
+        description = 'This email address is already associated with an account.';
         break;
       case 'auth/weak-password':
         title = 'Weak Password';
@@ -121,12 +120,23 @@ export function AuthForm() {
         break;
       case 'auth/operation-not-allowed':
         title = 'Sign-In Method Disabled';
-        description =
-          'This sign-in method is disabled. Please enable it in your Firebase project authentication settings.';
+        description = 'This sign-in method is disabled. Please contact support.';
         break;
       case 'auth/popup-blocked':
         title = 'Popup Blocked';
-        description = 'The sign-in popup was blocked by your browser. Please enable popups and try again.';
+        description = 'The sign-in popup was blocked by your browser. Please enable popups.';
+        break;
+      case 'auth/popup-closed-by-user':
+        // No alert needed for manual closure, just clear error
+        setSubmissionError(null);
+        return;
+      case 'auth/too-many-requests':
+        title = 'Too Many Requests';
+        description = 'Access to this account has been temporarily disabled due to many failed login attempts. You can immediately restore it by resetting your password or you can try again later.';
+        break;
+      case 'auth/network-request-failed':
+        title = 'Network Error';
+        description = 'Please check your internet connection and try again.';
         break;
     }
     
@@ -139,7 +149,7 @@ export function AuthForm() {
       await signInWithEmailAndPassword(auth, values.email, values.password);
       toast({
         title: 'Signed In',
-        description: 'Welcome back! You have been successfully signed in.',
+        description: 'Welcome back!',
       });
       router.push('/dashboard');
     } catch (error) {
@@ -161,7 +171,7 @@ export function AuthForm() {
 
       toast({
         title: 'Account Created',
-        description: 'Welcome! Your account has been created successfully.',
+        description: 'Welcome to PathFinders AI!',
       });
       router.push('/dashboard');
     } catch (error) {
@@ -173,7 +183,6 @@ export function AuthForm() {
     setIsResetting(true);
     setSubmissionError(null);
     try {
-        // Explicitly set the redirect URL to our custom reset password page
         const actionCodeSettings = {
           url: `${window.location.origin}/reset-password`,
           handleCodeInApp: true,
@@ -182,24 +191,24 @@ export function AuthForm() {
         await sendPasswordResetEmail(auth, values.email, actionCodeSettings);
         
         toast({
-            title: 'Check Your Email',
-            description: 'If an account exists for that email, a password reset link has been sent.',
+            title: 'Email Sent',
+            description: 'Please check your inbox for password reset instructions.',
         });
         setResetDialogOpen(false);
         forgotPasswordForm.reset();
     } catch (error) {
         const authError = error as AuthError;
-        let description = 'Could not send reset email. Please try again later.';
-        
-        // Don't leak whether a user exists for security reasons
+        // Don't leak account existence for reset requests
         if (authError.code === 'auth/user-not-found') {
-            description = 'If an account exists for that email, a password reset link has been sent.';
+          toast({
+              title: 'Email Sent',
+              description: 'Please check your inbox for password reset instructions.',
+          });
+          setResetDialogOpen(false);
+          forgotPasswordForm.reset();
+          return;
         }
-
-        setSubmissionError({
-            title: 'Request Failed',
-            description,
-        });
+        handleAuthError(authError);
     } finally {
         setIsResetting(false);
     }
@@ -213,19 +222,12 @@ export function AuthForm() {
     try {
       await signInWithPopup(auth, provider);
       toast({
-        title: 'Signed In with Google',
-        description: 'You have been successfully signed in.',
+        title: 'Success',
+        description: 'Signed in with Google.',
       });
       router.push('/dashboard');
     } catch (error) {
-      const authError = error as AuthError;
-      if (
-        authError.code === 'auth/popup-closed-by-user' ||
-        authError.code === 'auth/cancelled-popup-request'
-      ) {
-        return;
-      }
-      handleAuthError(authError);
+      handleAuthError(error as AuthError);
     }
   };
 
@@ -241,7 +243,7 @@ export function AuthForm() {
         <Tabs
           defaultValue="sign-in"
           value={activeTab}
-          onValueChange={ (tab) => {
+          onValueChange={(tab) => {
             setSubmissionError(null);
             setActiveTab(tab);
           }}
@@ -266,7 +268,7 @@ export function AuthForm() {
                       <FormControl>
                         <Input
                           type="email"
-                          placeholder="m@example.com"
+                          placeholder="name@example.com"
                           {...field}
                         />
                       </FormControl>
@@ -281,7 +283,10 @@ export function AuthForm() {
                     <FormItem>
                       <div className="flex items-center justify-between">
                         <FormLabel>Password</FormLabel>
-                        <Dialog open={resetDialogOpen} onOpenChange={setResetDialogOpen}>
+                        <Dialog open={resetDialogOpen} onOpenChange={(open) => {
+                          setResetDialogOpen(open);
+                          if (!open) setSubmissionError(null);
+                        }}>
                             <DialogTrigger asChild>
                                 <button type="button" className="text-sm text-muted-foreground hover:text-primary transition-colors">
                                 Forgot password?
@@ -305,7 +310,7 @@ export function AuthForm() {
                                                 <FormControl>
                                                     <Input
                                                     type="email"
-                                                    placeholder="m@example.com"
+                                                    placeholder="name@example.com"
                                                     {...field}
                                                     />
                                                 </FormControl>
@@ -379,7 +384,7 @@ export function AuthForm() {
                       <FormControl>
                         <Input
                           type="email"
-                          placeholder="m@example.com"
+                          placeholder="name@example.com"
                           {...field}
                         />
                       </FormControl>
