@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -67,6 +67,17 @@ export function AuthForm() {
   const [submissionError, setSubmissionError] = useState<{ title: string; description: string } | null>(null);
   const [resetDialogOpen, setResetDialogOpen] = useState(false);
   const [isResetting, setIsResetting] = useState(false);
+  const [cooldownSeconds, setCooldownSeconds] = useState(0);
+
+  const isCooldownActive = cooldownSeconds > 0;
+
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
+    if (cooldownSeconds > 0) {
+      timer = setTimeout(() => setCooldownSeconds((prev) => prev - 1), 1000);
+    }
+    return () => clearTimeout(timer);
+  }, [cooldownSeconds]);
 
   const signInForm = useForm<z.infer<typeof signInSchema>>({
     resolver: zodResolver(signInSchema),
@@ -156,6 +167,8 @@ export function AuthForm() {
   };
   
   const onForgotPasswordSubmit = async (values: z.infer<typeof forgotPasswordSchema>) => {
+    if (isCooldownActive) return;
+
     setIsResetting(true);
     setSubmissionError(null);
     try {
@@ -165,16 +178,17 @@ export function AuthForm() {
             title: 'Success',
             description: 'Password reset link sent. Please check your email.',
         });
+        setCooldownSeconds(60);
         setResetDialogOpen(false);
         forgotPasswordForm.reset();
     } catch (error) {
         const authError = error as AuthError;
         if (authError.code === 'auth/user-not-found') {
-          // Silent success for security to avoid email enumeration
           toast({
               title: 'Success',
               description: 'Password reset link sent. Please check your email.',
           });
+          setCooldownSeconds(60);
           setResetDialogOpen(false);
           forgotPasswordForm.reset();
           return;
@@ -272,10 +286,17 @@ export function AuthForm() {
                                                 </FormItem>
                                             )}
                                         />
-                                        <Button type="submit" className="w-full" disabled={isResetting}>
-                                            {isResetting ? <Loader2 className="animate-spin mr-2 h-4 w-4" /> : null}
-                                            {isResetting ? 'Sending...' : 'Send Reset Link'}
-                                        </Button>
+                                        <div className="space-y-2">
+                                          <Button type="submit" className="w-full" disabled={isResetting || isCooldownActive}>
+                                              {isResetting ? <Loader2 className="animate-spin mr-2 h-4 w-4" /> : null}
+                                              {isResetting ? 'Sending...' : isCooldownActive ? `Wait ${cooldownSeconds}s` : 'Send Reset Link'}
+                                          </Button>
+                                          {isCooldownActive && (
+                                            <p className="text-xs text-center text-muted-foreground">
+                                              Please wait before requesting another reset email
+                                            </p>
+                                          )}
+                                        </div>
                                     </form>
                                 </Form>
                             </DialogContent>
