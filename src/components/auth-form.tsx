@@ -14,6 +14,7 @@ import {
   updateProfile,
   sendPasswordResetEmail,
 } from 'firebase/auth';
+import { useRouter } from 'next/navigation';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -23,7 +24,7 @@ import { useToast } from '@/hooks/use-toast';
 import {
   Card,
   CardContent,
-} from './ui/card';
+} from '@/components/ui/card';
 import {
   Form,
   FormControl,
@@ -31,7 +32,7 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from './ui/form';
+} from '@/components/ui/form';
 import { useAuth } from '@/firebase';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import {
@@ -72,6 +73,7 @@ const GoogleIcon = () => (
 export function AuthForm() {
   const { toast } = useToast();
   const auth = useAuth();
+  const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
   const [activeTab, setActiveTab] = useState('sign-in');
   const [submissionError, setSubmissionError] = useState<{ title: string; description: string } | null>(null);
@@ -139,7 +141,8 @@ export function AuthForm() {
         title: 'Signed In',
         description: 'Welcome back! You have been successfully signed in.',
       });
-      window.location.assign('/dashboard');
+      // Use router for smoother navigation after state update
+      router.push('/dashboard');
     } catch (error) {
       handleAuthError(error as AuthError);
     }
@@ -161,7 +164,7 @@ export function AuthForm() {
         title: 'Account Created',
         description: 'Welcome! Your account has been created successfully.',
       });
-      window.location.assign('/dashboard');
+      router.push('/dashboard');
     } catch (error) {
       handleAuthError(error as AuthError);
     }
@@ -191,7 +194,6 @@ export function AuthForm() {
   const handleGoogleSignIn = async () => {
     setSubmissionError(null);
     const provider = new GoogleAuthProvider();
-    // Force the account selection prompt to ensure users can choose personal accounts
     provider.setCustomParameters({ prompt: 'select_account' });
     
     try {
@@ -200,7 +202,7 @@ export function AuthForm() {
         title: 'Signed In with Google',
         description: 'You have been successfully signed in.',
       });
-      window.location.assign('/dashboard');
+      router.push('/dashboard');
     } catch (error) {
       const authError = error as AuthError;
       if (

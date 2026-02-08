@@ -2,7 +2,7 @@
 
 import { firebaseConfig } from '@/firebase/config';
 import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
-import { getAuth } from 'firebase/auth';
+import { getAuth, setPersistence, browserLocalPersistence } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore'
 
 // IMPORTANT: DO NOT MODIFY THIS FUNCTION
@@ -34,6 +34,12 @@ export function initializeFirebase() {
 
 export function getSdks(firebaseApp: FirebaseApp) {
   const auth = getAuth(firebaseApp);
+  
+  // Explicitly set persistence to local for stable sessions
+  setPersistence(auth, browserLocalPersistence).catch((err) => {
+    console.error("Failed to set auth persistence:", err);
+  });
+
   // Ensure the auth instance uses the device's native language for localized flows
   auth.useDeviceLanguage();
   
