@@ -107,7 +107,7 @@ export function AuthForm() {
         break;
       case 'auth/email-already-in-use':
         title = 'Email Already in Use';
-        description = 'This email address is already associated with an account.';
+        description = 'This email address is already in use. Please sign in or reset your password.';
         break;
       case 'auth/weak-password':
         title = 'Weak Password';
@@ -172,10 +172,6 @@ export function AuthForm() {
     setIsResetting(true);
     setSubmissionError(null);
     try {
-        // Explicitly specify the redirect URL for the default Firebase hosted UI.
-        // This URL is where the user will be redirected (via a 'Continue' button)
-        // after they have successfully reset their password on the Firebase hosted page.
-        // Using window.location.origin ensures the redirect works in both preview and production.
         const actionCodeSettings = {
           url: window.location.origin,
           handleCodeInApp: false,
@@ -185,18 +181,17 @@ export function AuthForm() {
         
         toast({
             title: 'Success',
-            description: 'Password reset link sent. Please check your email.',
+            description: 'Password reset link sent. Please check your inbox.',
         });
         setCooldownSeconds(60);
         setResetDialogOpen(false);
         forgotPasswordForm.reset();
     } catch (error) {
         const authError = error as AuthError;
-        // Security: To prevent email enumeration, we show a success message even if the user is not found.
         if (authError.code === 'auth/user-not-found') {
           toast({
               title: 'Success',
-              description: 'Password reset link sent. Please check your email.',
+              description: 'Password reset link sent. Please check your inbox.',
           });
           setCooldownSeconds(60);
           setResetDialogOpen(false);
