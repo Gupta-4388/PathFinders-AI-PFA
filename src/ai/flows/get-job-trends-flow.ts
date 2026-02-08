@@ -1,7 +1,7 @@
 'use server';
 
 /**
- * @fileOverview Provides job market trend data for visualization.
+ * @fileOverview Provides job market trend data for visualization based on current industry knowledge.
  *
  * - getJobTrends - A function that returns job market trends.
  * - GetJobTrendsOutput - The return type for the getJobTrends function.
@@ -49,12 +49,12 @@ export async function getJobTrends(): Promise<GetJobTrendsOutput> {
 const getJobTrendsPrompt = ai.definePrompt({
   name: 'getJobTrendsPrompt',
   output: { schema: GetJobTrendsOutputSchema },
-  prompt: `You are a job market analyst. Generate realistic, but fictional, trend data for the following roles: Software Engineer, Data Scientist, Product Manager, DevOps Engineer, UX/UI Designer, and Cybersecurity Analyst. Also provide data on job openings in key tech hubs.
+  prompt: `You are a professional job market analyst. Provide current and accurate job market trend data for the following key tech roles: Software Engineer, Data Scientist, Product Manager, DevOps Engineer, UX/UI Designer, and Cybersecurity Analyst. Also provide data on job openings in global tech hubs.
 
 Provide the following:
-1.  **Salary by Experience**: For each of the six roles, provide the average annual salary (in USD, without symbols, e.g., 85000) for "Entry-Level", "Mid-Level", and "Senior-Level" positions. The data should be an array of objects.
-2.  **Market Demand**: Provide a current demand score (1-100) for each of the six roles. A higher score means more demand.
-3.  **Job Openings by Location**: Provide the number of open tech positions for a mix of 5 key tech hubs in India and around the world (e.g., Bengaluru, San Francisco, London, Hyderabad, Singapore).`,
+1.  **Salary by Experience**: For each of the six roles, provide the current average annual salary (in USD, without symbols) for "Entry-Level", "Mid-Level", and "Senior-Level" positions based on recent global tech industry benchmarks.
+2.  **Market Demand**: Provide a current demand score (1-100) for each of the six roles based on current hiring volumes and industry growth.
+3.  **Job Openings by Location**: Provide the approximate number of current open tech positions in 5 major global tech hubs (e.g., Bengaluru, San Francisco, London, Hyderabad, Singapore).`,
 });
 
 const getJobTrendsFlow = ai.defineFlow(

@@ -14,10 +14,9 @@ import {
   Legend,
   Pie,
   PieChart,
-  ResponsiveContainer,
-  Tooltip,
   XAxis,
   YAxis,
+  Tooltip as RechartsTooltip,
 } from 'recharts';
 
 import {
@@ -46,7 +45,7 @@ const chartColors = [
   'hsl(var(--chart-3))',
   'hsl(var(--chart-4))',
   'hsl(var(--chart-5))',
-  'hsl(var(--chart-2))', // Re-using for 6th item
+  'hsl(var(--chart-2))',
 ];
 
 export default function TrendsPage() {
@@ -63,29 +62,9 @@ export default function TrendsPage() {
   useEffect(() => {
     const fetchTrends = async () => {
       setLoading(true);
-      const cachedData = localStorage.getItem('jobTrendsData');
-      if (cachedData) {
-        try {
-          const parsedData = JSON.parse(cachedData);
-          // Simple validation to ensure the data structure is what we expect
-          if (
-            parsedData.salaryByExperience &&
-            parsedData.marketDemand &&
-            parsedData.marketDemand.length === 6
-          ) {
-            setTrendsData(parsedData);
-            setLoading(false);
-            return;
-          }
-        } catch (e) {
-          console.error('Failed to parse cached data', e);
-          // If parsing fails, fetch new data
-        }
-      }
       try {
         const data = await getJobTrends();
         setTrendsData(data);
-        localStorage.setItem('jobTrendsData', JSON.stringify(data));
       } catch (error) {
         console.error('Failed to fetch job trends:', error);
         toast({
@@ -114,7 +93,7 @@ export default function TrendsPage() {
 
   if (!trendsData) {
     return (
-      <div className="text-center text-muted-foreground">
+      <div className="text-center text-muted-foreground p-12">
         No trend data available.
       </div>
     );
@@ -143,7 +122,7 @@ export default function TrendsPage() {
           <CardTitle>Job Market Trends</CardTitle>
           <CardDescription>
             Visualize current job trends, in-demand skills, and salary
-            benchmarks.
+            benchmarks driven by AI analysis.
           </CardDescription>
         </CardHeader>
       </Card>
@@ -152,7 +131,7 @@ export default function TrendsPage() {
         <CardHeader>
           <CardTitle>Salary by Experience Level</CardTitle>
           <CardDescription>
-            Estimated annual salary for popular tech roles based on experience.
+            Estimated annual salary for popular tech roles based on recent market observations.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -170,7 +149,7 @@ export default function TrendsPage() {
                 height={80}
               />
               <YAxis tickFormatter={formatCurrency} width={80} />
-              <Tooltip
+              <ChartTooltip
                 content={
                   <ChartTooltipContent
                     formatter={(value) => formatCurrency(value as number)}
@@ -205,8 +184,7 @@ export default function TrendsPage() {
             <div>
               <CardTitle>Current Market Demand</CardTitle>
               <CardDescription>
-                Demand score indicates how frequently a role appears in job
-                openings.
+                Demand score (1-100) based on industry hiring signals.
               </CardDescription>
             </div>
             <RadioGroup
@@ -262,7 +240,7 @@ export default function TrendsPage() {
                   interval={0}
                 />
                 <XAxis type="number" dataKey="demand" hide />
-                <Tooltip
+                <ChartTooltip
                   cursor={{ fill: 'hsl(var(--muted))' }}
                   content={<ChartTooltipContent indicator="dot" />}
                 />
@@ -309,7 +287,7 @@ export default function TrendsPage() {
                     />
                   ))}
                 </Pie>
-                <Tooltip
+                <ChartTooltip
                   content={<ChartTooltipContent indicator="dot" nameKey="role" />}
                 />
                 <Legend />
@@ -325,7 +303,7 @@ export default function TrendsPage() {
             <div>
               <CardTitle>Job Openings by Location</CardTitle>
               <CardDescription>
-                Number of open positions in key tech hubs.
+                Live pulse of tech hub availability.
               </CardDescription>
             </div>
             <RadioGroup
@@ -381,7 +359,7 @@ export default function TrendsPage() {
                   interval={0}
                 />
                 <XAxis type="number" dataKey="openings" hide />
-                <Tooltip
+                <ChartTooltip
                   cursor={{ fill: 'hsl(var(--muted))' }}
                   content={
                     <ChartTooltipContent
@@ -440,7 +418,7 @@ export default function TrendsPage() {
                     />
                   ))}
                 </Pie>
-                <Tooltip
+                <ChartTooltip
                   content={
                     <ChartTooltipContent
                       formatter={(value) => formatNumber(value as number)}
