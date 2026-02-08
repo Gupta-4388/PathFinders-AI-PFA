@@ -134,7 +134,7 @@ export default function Home() {
                   <img
                     src="https://github.com/Gupta-4388/PFA-logo/blob/main/PFA-Mock(!).png?raw=true"
                     alt="Mock Interview Simulator Logo"
-                    className="h-12 w-12 object-contain"
+                    className="h-16 w-16 object-contain"
                   />
                 }
                 title="Mock Interview Simulator"
