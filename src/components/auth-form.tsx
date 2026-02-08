@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -123,6 +122,10 @@ export function AuthForm() {
         description =
           'This sign-in method is disabled. Please enable it in your Firebase project authentication settings.';
         break;
+      case 'auth/popup-blocked':
+        title = 'Popup Blocked';
+        description = 'The sign-in popup was blocked by your browser. Please enable popups and try again.';
+        break;
     }
     
     setSubmissionError({ title, description });
@@ -188,6 +191,9 @@ export function AuthForm() {
   const handleGoogleSignIn = async () => {
     setSubmissionError(null);
     const provider = new GoogleAuthProvider();
+    // Force the account selection prompt to ensure users can choose personal accounts
+    provider.setCustomParameters({ prompt: 'select_account' });
+    
     try {
       await signInWithPopup(auth, provider);
       toast({
@@ -449,5 +455,3 @@ export function AuthForm() {
     </Card>
   );
 }
-
-    

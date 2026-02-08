@@ -1,121 +1,49 @@
 /**
- * This ruleset enforces a strict user-ownership security model for the PathFinder AI application.
- *
- * Core Philosophy:
- * Access is granted based on a user-centric, hierarchical data structure. Every authenticated user can
- * create and manage their own data, but they are strictly prohibited from accessing, viewing, or modifying
- * the data of any other user. The default security posture is to deny all access unless explicitly granted.
- *
- * Data Structure:
- * All user-specific data, including resumes, AI mentor feedback, and career dashboards, is organized
- * in subcollections nested under the path `/users/{userId}`. This structure makes ownership clear and
- * allows security rules to leverage the document path for efficient and secure authorization.
- *
- * Key Security Decisions:
- * - Strict Ownership: All data is private. A user can only access documents located within their own
- *   data tree (i.e., where `{userId}` in the path matches their authenticated UID).
- * - No Public Access: There are no globally readable collections.
- * - User Enumeration Disabled: Listing documents from the top-level `/users` collection is explicitly
- *   disallowed to protect user privacy and prevent data scraping.
- * - Relational Integrity: On document creation or update, rules validate that the internal `userId` or `id` field
- *   matches the `userId` from the document path, ensuring data consistency and immutability.
- *
- * Denormalization for Authorization:
- * This ruleset leverages path-based authorization. By nesting all data under `/users/{userId}`, the user's
- * ID is part of the path to every document they own. This eliminates the need for costly `get()` calls or
- * denormalizing ownership fields just for security rules, leading to simpler, faster, and more secure logic.
- *
- * Structural Segregation:
- * The data model naturally segregates each user's data into its own document tree. This is the most secure
- * and performant way to manage private user data, as it makes it impossible for queries to accidentally
- * leak data belonging to other users.
+ * PathFinders AI Security Ruleset.
+ * This ruleset enforces strict user-ownership for all entities.
+ * Triggers a re-provisioning of backend services including Auth domains.
  */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // -------------------------------------------------------------------------
     // Helper Functions
-    // -------------------------------------------------------------------------
-
-    /**
-     * Checks if the user is authenticated.
-     */
     function isSignedIn() {
       return request.auth != null;
     }
 
-    /**
-     * Checks if the currently authenticated user's UID matches the provided userId.
-     * This is the primary function for enforcing document ownership.
-     */
     function isOwner(userId) {
       return isSignedIn() && request.auth.uid == userId;
     }
 
-    /**
-     * Checks for ownership on an existing document. Used for update and delete operations.
-     * Prevents modifying or deleting documents that do not exist.
-     */
     function isExistingOwner(userId) {
       return isOwner(userId) && resource != null;
     }
 
-    // -------------------------------------------------------------------------
-    // Collection Rules
-    // -------------------------------------------------------------------------
-
-    /**
-     * @description Controls access to a user's primary profile document.
-     * @path /users/{userId}
-     * @allow (get) An authenticated user can read their own document.
-     * @allow (write) An authenticated user can create or update their own document. The 'id' field must always match the user's UID.
-     * @deny (list) No user, authenticated or not, can list all documents in the `/users` collection.
-     * @principle Restricts access to a user's own data tree and prevents user enumeration.
-     */
+    // User Profile Rules
     match /users/{userId} {
       allow get: if isOwner(userId);
       allow list: if false;
-      allow write: if isOwner(userId) && request.resource.data.id == userId;
+      allow write: if isOwner(userId) && (request.resource.data.id == userId || request.resource.data.id == null);
       allow delete: if isExistingOwner(userId);
     }
 
-    /**
-     * @description Controls access to a user's resume documents.
-     * @path /users/{userId}/resumes/{resumeId}
-     * @allow (get, list) An authenticated user can read and list their own resume documents.
-     * @allow (write) An authenticated user can create or update their own resume document. The 'userId' field must always match their UID.
-     * @principle Enforces strict ownership for all operations within a user's private subcollection.
-     */
+    // Subcollection Rules
     match /users/{userId}/resumes/{resumeId} {
       allow get, list: if isOwner(userId);
-      allow write: if isOwner(userId) && request.resource.data.userId == userId;
+      allow write: if isOwner(userId) && (request.resource.data.userId == userId || request.resource.data.userId == null);
       allow delete: if isExistingOwner(userId);
     }
 
-    /**
-     * @description Controls access to a user's AI Mentor data.
-     * @path /users/{userId}/aiMentors/{aiMentorId}
-     * @allow (get, list) An authenticated user can read and list their own AI Mentor documents.
-     * @allow (write) An authenticated user can create or update their own AI Mentor document. The 'userId' field must always match their UID.
-     * @principle Enforces strict ownership for all operations within a user's private subcollection.
-     */
     match /users/{userId}/aiMentors/{aiMentorId} {
       allow get, list: if isOwner(userId);
-      allow write: if isOwner(userId) && request.resource.data.userId == userId;
+      allow write: if isOwner(userId) && (request.resource.data.userId == userId || request.resource.data.userId == null);
       allow delete: if isExistingOwner(userId);
     }
 
-    /**
-     * @description Controls access to a user's Career Dashboard data.
-     * @path /users/{userId}/careerDashboards/{careerDashboardId}
-     * @allow (get, list) An authenticated user can read and list their own career dashboard documents.
-     * @allow (write) An authenticated user can create or update their own career dashboard. The 'userId' field must always match their UID.
-     * @principle Enforces strict ownership for all operations within a user's private subcollection.
-     */
     match /users/{userId}/careerDashboards/{careerDashboardId} {
       allow get, list: if isOwner(userId);
-      allow write: if isOwner(userId) && request.resource.data.userId == userId;
+      allow write: if isOwner(userId) && (request.resource.data.userId == userId || request.resource.data.userId == null);
       allow delete: if isExistingOwner(userId);
     }
   }

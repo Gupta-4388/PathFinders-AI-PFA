@@ -1,11 +1,10 @@
-
 {
   "entities": {
     "User": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "User",
       "type": "object",
-      "description": "Represents a user within the PathFinders AI application.",
+      "description": "Represents a user within the PathFinders AI application with synchronized profile data from multiple providers.",
       "properties": {
         "id": {
           "type": "string",
@@ -31,15 +30,15 @@
         },
         "resumeId": {
           "type": "string",
-          "description": "Reference to Resume entity. (Relationship: User 1:1 Resume)"
+          "description": "Reference to Resume entity."
         },
         "aiMentorId": {
           "type": "string",
-          "description": "Reference to AIMentor entity. (Relationship: User 1:1 AIMentor)"
+          "description": "Reference to AIMentor entity."
         },
         "careerDashboardId": {
           "type": "string",
-          "description": "Reference to CareerDashboard entity. (Relationship: User 1:1 CareerDashboard)"
+          "description": "Reference to CareerDashboard entity."
         }
       },
       "required": [
@@ -60,7 +59,7 @@
         },
         "userId": {
           "type": "string",
-          "description": "Reference to User. (Relationship: User 1:1 Resume)"
+          "description": "Reference to User."
         },
         "rawText": {
           "type": "string",
@@ -103,7 +102,7 @@
         },
         "userId": {
           "type": "string",
-          "description": "Reference to User. (Relationship: User 1:1 AIMentor)"
+          "description": "Reference to User."
         },
         "careerGuidance": {
           "type": "string",
@@ -142,7 +141,7 @@
         },
         "userId": {
           "type": "string",
-          "description": "Reference to User. (Relationship: User 1:1 CareerDashboard)"
+          "description": "Reference to User."
         },
         "recommendedRoles": {
           "type": "array",
@@ -206,11 +205,11 @@
           "schema": {
             "$ref": "#/backend/entities/Resume"
           },
-          "description": "Stores resume data for a specific user. The `userId` links to the user who owns the resume.",
+          "description": "Stores resume data for a specific user.",
           "params": [
             {
               "name": "userId",
-              "description": "The unique identifier for the user, derived from Firebase Authentication's `uid`."
+              "description": "The unique identifier for the user."
             },
             {
               "name": "resumeId",
@@ -226,11 +225,11 @@
           "schema": {
             "$ref": "#/backend/entities/AIMentor"
           },
-          "description": "Stores AI mentor data for a specific user. The `userId` links to the user who owns the AI mentor data.",
+          "description": "Stores AI mentor data for a specific user.",
           "params": [
             {
               "name": "userId",
-              "description": "The unique identifier for the user, derived from Firebase Authentication's `uid`."
+              "description": "The unique identifier for the user."
             },
             {
               "name": "aiMentorId",
@@ -246,11 +245,11 @@
           "schema": {
             "$ref": "#/backend/entities/CareerDashboard"
           },
-          "description": "Stores career dashboard data for a specific user. The `userId` links to the user who owns the career dashboard data.",
+          "description": "Stores career dashboard data for a specific user.",
           "params": [
             {
               "name": "userId",
-              "description": "The unique identifier for the user, derived from Firebase Authentication's `uid`."
+              "description": "The unique identifier for the user."
             },
             {
               "name": "careerDashboardId",
@@ -259,7 +258,6 @@
           ]
         }
       }
-    ],
-    "reasoning": "The Firestore structure is designed to be secure, scalable, and easily debuggable, adhering to the core principles of Authorization Independence, Clarity of Intent, DBAC (Database-Based Access Control), and QAPs (Rules are not Filters). Each top-level entity is directly owned by a user via a hierarchical path, enabling straightforward ownership-based security rules."
+    ]
   }
 }
