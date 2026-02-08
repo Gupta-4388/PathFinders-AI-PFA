@@ -2,7 +2,7 @@
 'use client';
 
 import Link from 'next/link';
-import { ArrowRight, Bot, FileText, Briefcase, TrendingUp, BrainCircuit, Loader2 } from 'lucide-react';
+import { ArrowRight, Bot, FileText, Briefcase, TrendingUp, BrainCircuit, Loader2, Video } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Logo from '@/components/logo';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -130,7 +130,7 @@ export default function Home() {
                 description="Visualize current job trends, in-demand skills, and salary benchmarks with dynamic charts and graphs."
               />
               <FlipCard
-                icon={<img src="https://api.requestfirebasebackend.com/v1/projects/studio-3236797647-636d0/files/Mock%20Interview%20Simulator%20Logo.png" alt="Mock Interview Simulator" className="h-10 w-auto" />}
+                icon={<Video className="h-8 w-8 text-accent" />}
                 title="Mock Interview Simulator"
                 description="Practice for interviews with AI-generated questions and receive real-time analysis of your performance."
               />

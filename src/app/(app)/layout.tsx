@@ -14,6 +14,7 @@ import {
   MessageSquare,
   Settings,
   TrendingUp,
+  Video,
 } from 'lucide-react';
 
 import {
@@ -42,11 +43,7 @@ import { AdzunaConfigModal } from '@/components/config/adzuna-config-modal';
 const navItems = [
   { href: '/dashboard', icon: LayoutGrid, label: 'Dashboard' },
   { href: '/resume', icon: FileText, label: 'Resume Analyzer' },
-  { 
-    href: '/interview', 
-    icon: (props: any) => <img src="https://api.requestfirebasebackend.com/v1/projects/studio-3236797647-636d0/files/Mock%20Interview%20Simulator%20Logo.png" alt="" className={cn("w-4 h-auto", props.className)} />, 
-    label: 'Mock Interview' 
-  },
+  { href: '/interview', icon: Video, label: 'Mock Interview' },
   { href: '/mentor', icon: Bot, label: 'AI Mentor' },
   { href: '/trends', icon: TrendingUp, label: 'Job Trends' },
   { href: '/settings', icon: Settings, label: 'Settings' },
