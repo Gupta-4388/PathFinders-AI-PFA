@@ -437,7 +437,7 @@ export default function TrendsPage() {
                     />
                     <Bar
                       dataKey="openings"
-                      fill="hsl(var(--chart-4))"
+                      fill="hsl(var(--primary))"
                       radius={[0, 4, 4, 0]}
                     />
                   </BarChart>
