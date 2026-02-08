@@ -130,7 +130,13 @@ export default function Home() {
                 description="Visualize current job trends, in-demand skills, and salary benchmarks with dynamic charts and graphs."
               />
               <FlipCard
-                icon={<Video className="h-8 w-8 text-accent" />}
+                icon={
+                  <img
+                    src="https://github.com/Gupta-4388/PFA-logo/blob/main/PFA-Mock.png?raw=true"
+                    alt="Mock Interview Simulator Logo"
+                    className="h-8 w-8 object-contain"
+                  />
+                }
                 title="Mock Interview Simulator"
                 description="Practice for interviews with AI-generated questions and receive real-time analysis of your performance."
               />
