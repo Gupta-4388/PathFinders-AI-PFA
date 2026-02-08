@@ -42,20 +42,24 @@ import {
 } from '@/components/ui/dialog';
 
 const signInSchema = z.object({
-  email: z.string().email({ message: 'Please enter a valid email.' }),
+  email: z.string().email({ message: 'Please enter a valid email address.' }),
   password: z.string().min(1, { message: 'Password is required.' }),
 });
 
 const signUpSchema = z.object({
   name: z.string().min(2, { message: 'Name must be at least 2 characters.' }),
-  email: z.string().email({ message: 'Please enter a valid email.' }),
+  email: z.string().email({ message: 'Please enter a valid email address.' }),
   password: z
     .string()
-    .min(8, { message: 'Password must be at least 8 characters.' }),
+    .min(6, { message: 'Password must be at least 6 characters.' }),
+  confirmPassword: z.string(),
+}).refine((data) => data.password === data.confirmPassword, {
+    message: "Passwords do not match.",
+    path: ["confirmPassword"],
 });
 
 const forgotPasswordSchema = z.object({
-    email: z.string().email({ message: 'Please enter a valid email.' }),
+    email: z.string().email({ message: 'Please enter a valid email address.' }),
 });
 
 export function AuthForm() {
@@ -86,7 +90,7 @@ export function AuthForm() {
 
   const signUpForm = useForm<z.infer<typeof signUpSchema>>({
     resolver: zodResolver(signUpSchema),
-    defaultValues: { name: '', email: '', password: '' },
+    defaultValues: { name: '', email: '', password: '', confirmPassword: '' },
   });
   
   const forgotPasswordForm = useForm<z.infer<typeof forgotPasswordSchema>>({
@@ -111,7 +115,7 @@ export function AuthForm() {
         break;
       case 'auth/weak-password':
         title = 'Weak Password';
-        description = 'The password must be at least 8 characters long.';
+        description = 'The password must be at least 6 characters long.';
         break;
       case 'auth/invalid-email':
         title = 'Invalid Email';
@@ -128,6 +132,11 @@ export function AuthForm() {
     }
     
     setSubmissionError({ title, description });
+    toast({
+        variant: 'destructive',
+        title,
+        description,
+    });
   };
 
   const onSignInSubmit = async (values: z.infer<typeof signInSchema>) => {
@@ -172,7 +181,6 @@ export function AuthForm() {
     setIsResetting(true);
     setSubmissionError(null);
     try {
-        // Use default Firebase hosted flow for reliability
         await sendPasswordResetEmail(auth, values.email);
         
         toast({
@@ -184,28 +192,21 @@ export function AuthForm() {
         forgotPasswordForm.reset();
     } catch (error) {
         const authError = error as AuthError;
-        
-        // Security Practice: Use the same success message even if the user isn't found
-        // to prevent email enumeration attacks.
-        if (authError.code === 'auth/user-not-found' || authError.code === 'auth/invalid-email') {
-          toast({
-              title: 'Success',
-              description: 'Password reset link sent. Please check your inbox.',
-          });
-          setCooldownSeconds(60);
-          setResetDialogOpen(false);
-          forgotPasswordForm.reset();
-          return;
+        if (authError.code === 'auth/user-not-found') {
+            setSubmissionError({ 
+                title: 'User Not Found', 
+                description: 'No account exists with this email address.' 
+            });
+        } else {
+            handleAuthError(authError);
         }
-
-        handleAuthError(authError);
     } finally {
         setIsResetting(false);
     }
   };
 
   return (
-    <Card className="border-0 shadow-none p-0">
+    <Card className="border-0 shadow-none p-0 bg-transparent">
       <CardContent className="p-0">
         {submissionError && (
           <Alert variant="destructive" className="mb-4">
@@ -222,15 +223,16 @@ export function AuthForm() {
           }}
           className="w-full"
         >
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="sign-in">Sign In</TabsTrigger>
-            <TabsTrigger value="sign-up">Sign Up</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-2 mb-4">
+            <TabsTrigger value="sign-in">Login</TabsTrigger>
+            <TabsTrigger value="sign-up">Register</TabsTrigger>
           </TabsList>
-          <TabsContent value="sign-in">
+          
+          <TabsContent value="sign-in" className="animate-fade-in">
             <Form {...signInForm}>
               <form
                 onSubmit={signInForm.handleSubmit(onSignInSubmit)}
-                className="space-y-4 py-4"
+                className="space-y-4"
               >
                 <FormField
                   control={signInForm.control}
@@ -261,7 +263,7 @@ export function AuthForm() {
                           if (!open) setSubmissionError(null);
                         }}>
                             <DialogTrigger asChild>
-                                <button type="button" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                                <button type="button" className="text-sm text-primary hover:underline transition-colors font-medium">
                                 Forgot password?
                                 </button>
                             </DialogTrigger>
@@ -269,7 +271,7 @@ export function AuthForm() {
                                 <DialogHeader>
                                 <DialogTitle>Reset Password</DialogTitle>
                                 <DialogDescription>
-                                    Enter your email and we'll send a link to reset your password.
+                                    Enter your email address and we'll send you a link to reset your password.
                                 </DialogDescription>
                                 </DialogHeader>
                                 <Form {...forgotPasswordForm}>
@@ -294,11 +296,11 @@ export function AuthForm() {
                                         <div className="space-y-2">
                                           <Button type="submit" className="w-full" disabled={isResetting || isCooldownActive}>
                                               {isResetting ? <Loader2 className="animate-spin mr-2 h-4 w-4" /> : null}
-                                              {isResetting ? 'Sending...' : isCooldownActive ? `Wait ${cooldownSeconds}s` : 'Send Reset Link'}
+                                              {isResetting ? 'Sending...' : isCooldownActive ? `Wait ${cooldownSeconds}s` : 'Send Reset Email'}
                                           </Button>
                                           {isCooldownActive && (
                                             <p className="text-xs text-center text-muted-foreground">
-                                              Please wait before requesting another reset email
+                                              Please wait before requesting another reset email.
                                             </p>
                                           )}
                                         </div>
@@ -311,19 +313,19 @@ export function AuthForm() {
                         <FormControl>
                           <Input
                             type={showPassword ? 'text' : 'password'}
-                            placeholder="********"
+                            placeholder="Enter your password"
                             {...field}
                           />
                         </FormControl>
                         <button
                           type="button"
                           onClick={() => setShowPassword(!showPassword)}
-                          className="absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground"
+                          className="absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground hover:text-foreground"
                         >
                           {showPassword ? (
-                            <EyeOff className="h-5 w-5" />
+                            <EyeOff className="h-4 w-4" />
                           ) : (
-                            <Eye className="h-5 w-5" />
+                            <Eye className="h-4 w-4" />
                           )}
                         </button>
                       </div>
@@ -335,23 +337,35 @@ export function AuthForm() {
                   {signInForm.formState.isSubmitting ? <Loader2 className="animate-spin mr-2 h-4 w-4" /> : null}
                   {signInForm.formState.isSubmitting ? 'Signing In...' : 'Sign In'}
                 </Button>
+                
+                <div className="text-center text-sm">
+                  Don't have an account?{' '}
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab('sign-up')}
+                    className="text-primary font-medium hover:underline"
+                  >
+                    Register now
+                  </button>
+                </div>
               </form>
             </Form>
           </TabsContent>
-          <TabsContent value="sign-up">
+          
+          <TabsContent value="sign-up" className="animate-fade-in">
             <Form {...signUpForm}>
               <form
                 onSubmit={signUpForm.handleSubmit(onSignUpSubmit)}
-                className="space-y-4 py-4"
+                className="space-y-4"
               >
                 <FormField
                   control={signUpForm.control}
                   name="name"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Name</FormLabel>
+                      <FormLabel>Full Name</FormLabel>
                       <FormControl>
-                        <Input placeholder="Your Name" {...field} />
+                        <Input placeholder="John Doe" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -362,7 +376,7 @@ export function AuthForm() {
                   name="email"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Email</FormLabel>
+                      <FormLabel>Email Address</FormLabel>
                       <FormControl>
                         <Input
                           type="email"
@@ -384,19 +398,19 @@ export function AuthForm() {
                         <FormControl>
                           <Input
                             type={showPassword ? 'text' : 'password'}
-                            placeholder="********"
+                            placeholder="Min. 6 characters"
                             {...field}
                           />
                         </FormControl>
                         <button
                           type="button"
                           onClick={() => setShowPassword(!showPassword)}
-                          className="absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground"
+                          className="absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground hover:text-foreground"
                         >
                           {showPassword ? (
-                            <EyeOff className="h-5 w-5" />
+                            <EyeOff className="h-4 w-4" />
                           ) : (
-                            <Eye className="h-5 w-5" />
+                            <Eye className="h-4 w-4" />
                           )}
                         </button>
                       </div>
@@ -404,38 +418,42 @@ export function AuthForm() {
                     </FormItem>
                   )}
                 />
+                <FormField
+                  control={signUpForm.control}
+                  name="confirmPassword"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Confirm Password</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="password"
+                          placeholder="Repeat your password"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
                 <Button type="submit" className="w-full h-11" disabled={signUpForm.formState.isSubmitting}>
                    {signUpForm.formState.isSubmitting ? <Loader2 className="animate-spin mr-2 h-4 w-4" /> : null}
-                   {signUpForm.formState.isSubmitting ? 'Signing Up...' : 'Sign Up'}
+                   {signUpForm.formState.isSubmitting ? 'Creating Account...' : 'Sign Up'}
                 </Button>
+                
+                <div className="text-center text-sm">
+                  Already have an account?{' '}
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab('sign-in')}
+                    className="text-primary font-medium hover:underline"
+                  >
+                    Back to login
+                  </button>
+                </div>
               </form>
             </Form>
           </TabsContent>
         </Tabs>
-
-        <div className="mt-6 text-center text-sm text-muted-foreground">
-          {activeTab === 'sign-in' ? (
-            <>
-              New User?{' '}
-              <button
-                onClick={() => setActiveTab('sign-up')}
-                className="font-medium text-primary hover:underline"
-              >
-                Sign Up
-              </button>
-            </>
-          ) : (
-            <>
-              Already have an account?{' '}
-              <button
-                onClick={() => setActiveTab('sign-in')}
-                className="font-medium text-primary hover:underline"
-              >
-                Sign In
-              </button>
-            </>
-          )}
-        </div>
       </CardContent>
     </Card>
   );
