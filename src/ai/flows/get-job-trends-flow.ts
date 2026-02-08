@@ -76,7 +76,7 @@ const getJobTrendsPrompt = ai.definePrompt({
   input: {
     schema: z.object({
       role: z.string().optional(),
-      apiData: z.any().optional().describe('Real-time data from the Adzuna API.')
+      apiData: z.any().nullable().describe('Real-time data from the Adzuna API, if available.')
     })
   },
   output: { schema: GetJobTrendsOutputSchema },
@@ -88,25 +88,25 @@ const getJobTrendsPrompt = ai.definePrompt({
   Provide a general overview of the tech job market.
   {{/if}}
 
-  Use the provided real-time Adzuna API data as your primary source of truth for current salaries and job volumes. 
-
   {{#if apiData}}
-  Real-time Market Pulse (Adzuna) for {{apiData.queriedRole}}:
+  Live Market Data (Adzuna) for {{apiData.queriedRole}}:
   - Total Active Listings Sampled: {{apiData.count}}
   - Representative Listings: 
     {{#each apiData.listings}}
-    * {{this.title}} in {{this.location}} (Salary Range: {{this.salary_min}} - {{this.salary_max}})
+    * {{this.title}} in {{this.location}} (Salary: {{this.salary_min}} - {{this.salary_max}})
     {{/each}}
+  
+  Use this live data to ground your salary and demand calculations.
+  {{else}}
+  Note: Real-time API data is currently unavailable. Please provide your best analysis based on your extensive knowledge of 2024-2025 tech market trends. 
   {{/if}}
 
-  Provide current and accurate job market trend data. If a specific role was requested, ensure the first entry in your data strictly represents that role.
-
-  Provide the following:
-  1. **Salary by Experience**: For each role, provide current average annual USD salary for "Entry-Level", "Mid-Level", and "Senior-Level".
+  Provide the following structured data:
+  1. **Salary by Experience**: For each role (or the specific role requested), provide current average annual USD salary for "Entry-Level", "Mid-Level", and "Senior-Level".
   2. **Market Demand**: Provide a demand score (1-100) for key roles.
   3. **Job Openings by Location**: Current open positions in 5 major global tech hubs.
-  4. **Top Skills**: Identify the 8 most requested skills in the job descriptions provided or for the role generally.
-  5. **Salary Trends**: Based on your knowledge, provide an estimated trend of average salaries for the last 5 years (2020-2024).`,
+  4. **Top Skills**: Identify the 8 most requested skills for the role or the general market.
+  5. **Salary Trends**: provide an estimated trend of average salaries for the last 5 years (2020-2024).`,
 });
 
 const getJobTrendsFlow = ai.defineFlow(
@@ -116,12 +116,8 @@ const getJobTrendsFlow = ai.defineFlow(
     outputSchema: GetJobTrendsOutputSchema,
   },
   async (input) => {
-    let apiData = null;
-    try {
-      apiData = await fetchJobTrendsFromAPI(input.role);
-    } catch (e) {
-      console.warn('Proceeding with AI baseline as Adzuna API is unavailable:', e);
-    }
+    // Fetch live data with built-in revalidation/caching
+    const apiData = await fetchJobTrendsFromAPI(input.role);
 
     const { output } = await getJobTrendsPrompt({ role: input.role, apiData });
     return output!;
