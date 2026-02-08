@@ -172,6 +172,7 @@ export function AuthForm() {
     setIsResetting(true);
     setSubmissionError(null);
     try {
+        // Explicitly specify the redirect URL for the password reset flow
         const actionCodeSettings = {
           url: window.location.origin,
           handleCodeInApp: false,
@@ -188,6 +189,7 @@ export function AuthForm() {
         forgotPasswordForm.reset();
     } catch (error) {
         const authError = error as AuthError;
+        // User enumeration protection: show success even if user not found
         if (authError.code === 'auth/user-not-found') {
           toast({
               title: 'Success',
