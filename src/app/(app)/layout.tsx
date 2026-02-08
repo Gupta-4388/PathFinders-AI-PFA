@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -70,7 +71,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         name: string | null;
         profilePicture: string | null;
         signUpMethod: string;
-        googleId?: string;
       } = {
         id: user.uid,
         email: user.email,
@@ -78,12 +78,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         profilePicture: user.photoURL,
         signUpMethod: providerId || 'unknown',
       };
-
-      // Ensure we capture Google ID if available to prevent duplicate checks
-      const googleProvider = user.providerData.find(p => p.providerId === 'google.com');
-      if (googleProvider) {
-        userData.googleId = googleProvider.uid;
-      }
 
       setDoc(userDocRef, userData, { merge: true })
         .catch((error) => {
