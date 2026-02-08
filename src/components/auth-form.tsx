@@ -355,7 +355,7 @@ export function AuthForm() {
         <div className="mt-6 text-center text-sm text-muted-foreground">
           {activeTab === 'sign-in' ? (
             <>
-              Don\'t have an account?{' '}
+              New User?{' '}
               <button
                 onClick={() => setActiveTab('sign-up')}
                 className="font-medium text-primary hover:underline"
