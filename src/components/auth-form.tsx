@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -160,12 +159,9 @@ export function AuthForm() {
     setIsResetting(true);
     setSubmissionError(null);
     try {
-        const actionCodeSettings = {
-          url: `${window.location.origin}/reset-password`,
-          handleCodeInApp: true,
-        };
-        
-        await sendPasswordResetEmail(auth, values.email, actionCodeSettings);
+        // We use the default Firebase hosted password reset flow by omitting actionCodeSettings.
+        // This is more reliable as it avoids issues with browser redirects and complex app initialization logic.
+        await sendPasswordResetEmail(auth, values.email);
         
         toast({
             title: 'Email Sent',
