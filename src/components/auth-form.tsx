@@ -13,6 +13,7 @@ import {
   signInWithEmailAndPassword,
   AuthError,
   updateProfile,
+  sendPasswordResetEmail,
 } from 'firebase/auth';
 
 import { Button } from '@/components/ui/button';
@@ -32,9 +33,16 @@ import {
   FormLabel,
   FormMessage,
 } from './ui/form';
-import Link from 'next/link';
 import { useAuth } from '@/firebase';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+} from '@/components/ui/dialog';
 
 const signInSchema = z.object({
   email: z.string().email({ message: 'Please enter a valid email.' }),
@@ -47,6 +55,10 @@ const signUpSchema = z.object({
   password: z
     .string()
     .min(8, { message: 'Password must be at least 8 characters.' }),
+});
+
+const forgotPasswordSchema = z.object({
+    email: z.string().email({ message: 'Please enter a valid email.' }),
 });
 
 const GoogleIcon = () => (
@@ -64,7 +76,8 @@ export function AuthForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [activeTab, setActiveTab] = useState('sign-in');
   const [submissionError, setSubmissionError] = useState<{ title: string; description: string } | null>(null);
-
+  const [resetDialogOpen, setResetDialogOpen] = useState(false);
+  const [isResetting, setIsResetting] = useState(false);
 
   const signInForm = useForm<z.infer<typeof signInSchema>>({
     resolver: zodResolver(signInSchema),
@@ -74,6 +87,11 @@ export function AuthForm() {
   const signUpForm = useForm<z.infer<typeof signUpSchema>>({
     resolver: zodResolver(signUpSchema),
     defaultValues: { name: '', email: '', password: '' },
+  });
+  
+  const forgotPasswordForm = useForm<z.infer<typeof forgotPasswordSchema>>({
+    resolver: zodResolver(forgotPasswordSchema),
+    defaultValues: { email: '' },
   });
 
   const handleAuthError = (error: AuthError) => {
@@ -108,11 +126,6 @@ export function AuthForm() {
     }
     
     setSubmissionError({ title, description });
-    toast({
-      variant: 'destructive',
-      title: title,
-      description: description,
-    });
   };
 
   const onSignInSubmit = async (values: z.infer<typeof signInSchema>) => {
@@ -150,6 +163,27 @@ export function AuthForm() {
       handleAuthError(error as AuthError);
     }
   };
+  
+  const onForgotPasswordSubmit = async (values: z.infer<typeof forgotPasswordSchema>) => {
+    setIsResetting(true);
+    setSubmissionError(null);
+    try {
+        await sendPasswordResetEmail(auth, values.email);
+        toast({
+            title: 'Check Your Email',
+            description: 'If an account exists for that email, a password reset link has been sent.',
+        });
+        setResetDialogOpen(false);
+        forgotPasswordForm.reset();
+    } catch (error) {
+        setSubmissionError({
+            title: 'Request Failed',
+            description: 'Could not send reset email. Please try again later.',
+        });
+    } finally {
+        setIsResetting(false);
+    }
+  };
 
   const handleGoogleSignIn = async () => {
     setSubmissionError(null);
@@ -185,7 +219,10 @@ export function AuthForm() {
         <Tabs
           defaultValue="sign-in"
           value={activeTab}
-          onValueChange={setActiveTab}
+          onValueChange={ (tab) => {
+            setSubmissionError(null);
+            setActiveTab(tab);
+          }}
           className="w-full"
         >
           <TabsList className="grid w-full grid-cols-2">
@@ -222,12 +259,45 @@ export function AuthForm() {
                     <FormItem>
                       <div className="flex items-center justify-between">
                         <FormLabel>Password</FormLabel>
-                        <Link
-                          href="#"
-                          className="text-sm text-muted-foreground hover:text-primary transition-colors"
-                        >
-                          Forgot password?
-                        </Link>
+                        <Dialog open={resetDialogOpen} onOpenChange={setResetDialogOpen}>
+                            <DialogTrigger asChild>
+                                <button type="button" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                                Forgot password?
+                                </button>
+                            </DialogTrigger>
+                            <DialogContent className="sm:max-w-[425px]">
+                                <DialogHeader>
+                                <DialogTitle>Reset Password</DialogTitle>
+                                <DialogDescription>
+                                    Enter your email and we'll send a link to reset your password.
+                                </DialogDescription>
+                                </DialogHeader>
+                                <Form {...forgotPasswordForm}>
+                                    <form onSubmit={forgotPasswordForm.handleSubmit(onForgotPasswordSubmit)} className="space-y-6 pt-2">
+                                        <FormField
+                                            control={forgotPasswordForm.control}
+                                            name="email"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                <FormLabel>Email</FormLabel>
+                                                <FormControl>
+                                                    <Input
+                                                    type="email"
+                                                    placeholder="m@example.com"
+                                                    {...field}
+                                                    />
+                                                </FormControl>
+                                                <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
+                                        <Button type="submit" className="w-full" disabled={isResetting}>
+                                            {isResetting ? 'Sending...' : 'Send Reset Link'}
+                                        </Button>
+                                    </form>
+                                </Form>
+                            </DialogContent>
+                        </Dialog>
                       </div>
                       <div className="relative">
                         <FormControl>
@@ -379,3 +449,5 @@ export function AuthForm() {
     </Card>
   );
 }
+
+    
