@@ -1,23 +1,18 @@
-
 'use client';
 
 import * as React from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import {
-  Activity,
   ArrowLeft,
-  Book,
   Bot,
   FileText,
   LayoutGrid,
-  Lightbulb,
   Loader2,
   LogOut,
   MessageSquare,
   Settings,
   TrendingUp,
-  User,
 } from 'lucide-react';
 
 import {
@@ -41,6 +36,7 @@ import { doc, setDoc } from 'firebase/firestore';
 import { cn } from '@/lib/utils';
 import { signOut } from 'firebase/auth';
 import { ThemeToggle } from '@/components/settings/theme-toggle';
+import { AdzunaConfigModal } from '@/components/config/adzuna-config-modal';
 
 const navItems = [
   { href: '/dashboard', icon: LayoutGrid, label: 'Dashboard' },
@@ -63,7 +59,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     () => (user ? doc(firestore, 'users', user.uid) : null),
     [user, firestore]
   );
-  const { data: userProfile } = useDoc<{ profilePicture?: string }>(userDocRef);
 
   React.useEffect(() => {
     if (user && userDocRef) {
@@ -138,11 +133,11 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <SidebarProvider>
+      <AdzunaConfigModal />
       <Sidebar>
         <SidebarHeader>
           <div className="flex items-center justify-between p-2">
             <Logo />
-            {/* This trigger is now only for mobile, as requested */}
           </div>
         </SidebarHeader>
         <SidebarContent>
