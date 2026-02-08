@@ -4,12 +4,18 @@
  * @fileOverview Provides job market trend data by combining real-time Adzuna API data with AI analysis.
  *
  * - getJobTrends - A function that returns job market trends.
+ * - GetJobTrendsInput - The input type for the getJobTrends function.
  * - GetJobTrendsOutput - The return type for the getJobTrends function.
  */
 
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 import { fetchJobTrendsFromAPI } from '@/app/actions/job-trends-actions';
+
+const GetJobTrendsInputSchema = z.object({
+  role: z.string().optional().describe('An optional specific job role to fetch trends for.'),
+});
+export type GetJobTrendsInput = z.infer<typeof GetJobTrendsInputSchema>;
 
 const SalaryByExperienceSchema = z.object({
   role: z.string().describe('The job role.'),
@@ -43,25 +49,31 @@ const GetJobTrendsOutputSchema = z.object({
 });
 export type GetJobTrendsOutput = z.infer<typeof GetJobTrendsOutputSchema>;
 
-export async function getJobTrends(): Promise<GetJobTrendsOutput> {
-  return getJobTrendsFlow();
+export async function getJobTrends(input?: GetJobTrendsInput): Promise<GetJobTrendsOutput> {
+  return getJobTrendsFlow(input || {});
 }
 
 const getJobTrendsPrompt = ai.definePrompt({
   name: 'getJobTrendsPrompt',
   input: {
     schema: z.object({
+      role: z.string().optional(),
       apiData: z.any().optional().describe('Real-time data from the Adzuna API.')
     })
   },
   output: { schema: GetJobTrendsOutputSchema },
   prompt: `You are a professional job market analyst. 
   
+  {{#if role}}
+  Focus your analysis on the role of: {{{role}}}.
+  {{else}}
+  Provide a general overview of the tech job market.
+  {{/if}}
+
   Use the provided real-time Adzuna API data as your primary source of truth for current salaries and job volumes. 
-  If API data is provided, use it to calibrate your benchmarks for the tech industry.
 
   {{#if apiData}}
-  Real-time Market Pulse (Adzuna):
+  Real-time Market Pulse (Adzuna) for {{apiData.queriedRole}}:
   - Total Active Listings Sampled: {{apiData.count}}
   - Representative Listings: 
     {{#each apiData.listings}}
@@ -69,7 +81,7 @@ const getJobTrendsPrompt = ai.definePrompt({
     {{/each}}
   {{/if}}
 
-  Provide current and accurate job market trend data for: Software Engineer, Data Scientist, Product Manager, DevOps Engineer, UX/UI Designer, and Cybersecurity Analyst.
+  Provide current and accurate job market trend data. If a specific role was requested, ensure the first entry in your data strictly represents that role. For the remaining entries, use: Software Engineer, Data Scientist, Product Manager, DevOps Engineer, UX/UI Designer, or Cybersecurity Analyst as relevant.
 
   Provide the following:
   1. **Salary by Experience**: For each role, provide the current average annual salary (USD) for "Entry-Level", "Mid-Level", and "Senior-Level".
@@ -80,17 +92,18 @@ const getJobTrendsPrompt = ai.definePrompt({
 const getJobTrendsFlow = ai.defineFlow(
   {
     name: 'getJobTrendsFlow',
+    inputSchema: GetJobTrendsInputSchema,
     outputSchema: GetJobTrendsOutputSchema,
   },
-  async () => {
+  async (input) => {
     let apiData = null;
     try {
-      apiData = await fetchJobTrendsFromAPI();
+      apiData = await fetchJobTrendsFromAPI(input.role);
     } catch (e) {
       console.warn('Proceeding with AI baseline as Adzuna API is unavailable:', e);
     }
 
-    const { output } = await getJobTrendsPrompt({ apiData });
+    const { output } = await getJobTrendsPrompt({ role: input.role, apiData });
     return output!;
   }
 );
