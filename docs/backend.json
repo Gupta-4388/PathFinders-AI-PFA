@@ -5,7 +5,7 @@
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "User",
       "type": "object",
-      "description": "Represents a user within the PathFinder AI application.",
+      "description": "Represents a user within the PathFinders AI application.",
       "properties": {
         "id": {
           "type": "string",
@@ -260,6 +260,6 @@
         }
       }
     ],
-    "reasoning": "The Firestore structure is designed to be secure, scalable, and easily debuggable, adhering to the core principles of Authorization Independence, Clarity of Intent, DBAC (Database-Based Access Control), and QAPs (Rules are not Filters).  Since the User document contains all the IDs for associated entities like `Resume`, `AIMentor`, and `CareerDashboard`, all the data required to build the dashboard can be retrieved from the `/users/{userId}` document. The key design strategy is to use hierarchical paths for user-owned data, enabling straightforward ownership-based security rules without relying on complex `get()` calls in security rules (Authorization Independence). Each top-level entity is directly owned by a user via a hierarchical path (e.g., `/users/{userId}/resumes/{resumeId}`), eliminating the need to denormalize authorization data, and facilitating simple, secure `list` operations. This design supports secure data access, with each user having sole access to their own data, including resume, AI mentor, and career dashboard information. This segregation inherently satisfies QAPs. The use of path-based ownership avoids the complexity of managing shared access or roles, streamlining the security rules and making them more maintainable."
+    "reasoning": "The Firestore structure is designed to be secure, scalable, and easily debuggable, adhering to the core principles of Authorization Independence, Clarity of Intent, DBAC (Database-Based Access Control), and QAPs (Rules are not Filters). Each top-level entity is directly owned by a user via a hierarchical path, enabling straightforward ownership-based security rules."
   }
 }
