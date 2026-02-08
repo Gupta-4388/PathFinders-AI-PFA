@@ -141,7 +141,6 @@ export function AuthForm() {
         title: 'Signed In',
         description: 'Welcome back! You have been successfully signed in.',
       });
-      // Use router for smoother navigation after state update
       router.push('/dashboard');
     } catch (error) {
       handleAuthError(error as AuthError);
@@ -174,7 +173,14 @@ export function AuthForm() {
     setIsResetting(true);
     setSubmissionError(null);
     try {
-        await sendPasswordResetEmail(auth, values.email);
+        // Explicitly set the redirect URL to our custom reset password page
+        const actionCodeSettings = {
+          url: `${window.location.origin}/reset-password`,
+          handleCodeInApp: true,
+        };
+        
+        await sendPasswordResetEmail(auth, values.email, actionCodeSettings);
+        
         toast({
             title: 'Check Your Email',
             description: 'If an account exists for that email, a password reset link has been sent.',
@@ -182,9 +188,17 @@ export function AuthForm() {
         setResetDialogOpen(false);
         forgotPasswordForm.reset();
     } catch (error) {
+        const authError = error as AuthError;
+        let description = 'Could not send reset email. Please try again later.';
+        
+        // Don't leak whether a user exists for security reasons
+        if (authError.code === 'auth/user-not-found') {
+            description = 'If an account exists for that email, a password reset link has been sent.';
+        }
+
         setSubmissionError({
             title: 'Request Failed',
-            description: 'Could not send reset email. Please try again later.',
+            description,
         });
     } finally {
         setIsResetting(false);
