@@ -119,7 +119,7 @@ export function AuthForm() {
         break;
       case 'auth/too-many-requests':
         title = 'Too Many Requests';
-        description = 'Access to this account has been temporarily disabled due to many failed login attempts.';
+        description = 'Access to this account has been temporarily disabled due to many failed login attempts. Please try again later.';
         break;
       case 'auth/network-request-failed':
         title = 'Network Error';
@@ -172,14 +172,8 @@ export function AuthForm() {
     setIsResetting(true);
     setSubmissionError(null);
     try {
-        // Explicitly specify the redirect URL for the password reset flow
-        // This ensures the "Continue" link in the email takes users back to the app.
-        const actionCodeSettings = {
-          url: window.location.origin,
-          handleCodeInApp: false,
-        };
-
-        await sendPasswordResetEmail(auth, values.email, actionCodeSettings);
+        // Use default Firebase hosted flow for reliability
+        await sendPasswordResetEmail(auth, values.email);
         
         toast({
             title: 'Success',
@@ -193,7 +187,7 @@ export function AuthForm() {
         
         // Security Practice: Use the same success message even if the user isn't found
         // to prevent email enumeration attacks.
-        if (authError.code === 'auth/user-not-found') {
+        if (authError.code === 'auth/user-not-found' || authError.code === 'auth/invalid-email') {
           toast({
               title: 'Success',
               description: 'Password reset link sent. Please check your inbox.',
