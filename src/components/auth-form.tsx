@@ -159,23 +159,21 @@ export function AuthForm() {
     setIsResetting(true);
     setSubmissionError(null);
     try {
-        // We use the default Firebase hosted password reset flow by omitting actionCodeSettings.
-        // This is more reliable as it avoids issues with browser redirects and complex app initialization logic.
         await sendPasswordResetEmail(auth, values.email);
         
         toast({
-            title: 'Email Sent',
-            description: 'Please check your inbox for password reset instructions.',
+            title: 'Success',
+            description: 'Password reset link sent. Please check your email.',
         });
         setResetDialogOpen(false);
         forgotPasswordForm.reset();
     } catch (error) {
         const authError = error as AuthError;
         if (authError.code === 'auth/user-not-found') {
-          // Silent success for security
+          // Silent success for security to avoid email enumeration
           toast({
-              title: 'Email Sent',
-              description: 'Please check your inbox for password reset instructions.',
+              title: 'Success',
+              description: 'Password reset link sent. Please check your email.',
           });
           setResetDialogOpen(false);
           forgotPasswordForm.reset();
