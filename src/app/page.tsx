@@ -130,7 +130,7 @@ export default function Home() {
                 description="Visualize current job trends, in-demand skills, and salary benchmarks with dynamic charts and graphs."
               />
               <FlipCard
-                icon={<BrainCircuit className="h-8 w-8 text-accent" />}
+                icon={<img src="https://api.requestfirebasebackend.com/v1/projects/studio-3236797647-636d0/files/Mock%20Interview%20Simulator%20Logo.png" alt="Mock Interview Simulator" className="h-10 w-auto" />}
                 title="Mock Interview Simulator"
                 description="Practice for interviews with AI-generated questions and receive real-time analysis of your performance."
               />
