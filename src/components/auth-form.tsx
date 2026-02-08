@@ -173,6 +173,7 @@ export function AuthForm() {
     setSubmissionError(null);
     try {
         // Explicitly specify the redirect URL for the password reset flow
+        // This ensures the "Continue" link in the email takes users back to the app.
         const actionCodeSettings = {
           url: window.location.origin,
           handleCodeInApp: false,
@@ -189,7 +190,9 @@ export function AuthForm() {
         forgotPasswordForm.reset();
     } catch (error) {
         const authError = error as AuthError;
-        // User enumeration protection: show success even if user not found
+        
+        // Security Practice: Use the same success message even if the user isn't found
+        // to prevent email enumeration attacks.
         if (authError.code === 'auth/user-not-found') {
           toast({
               title: 'Success',
@@ -200,6 +203,7 @@ export function AuthForm() {
           forgotPasswordForm.reset();
           return;
         }
+
         handleAuthError(authError);
     } finally {
         setIsResetting(false);
