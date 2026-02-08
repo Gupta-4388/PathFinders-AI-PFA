@@ -7,7 +7,7 @@ import {
   PieChart as PieChartIcon,
   Search,
   TrendingUp,
-  BrainCircuit,
+  Sparkles,
   MapPin,
   LineChart as LineChartIcon,
 } from 'lucide-react';
@@ -249,7 +249,7 @@ export default function TrendsPage() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <BrainCircuit className="h-5 w-5 text-primary" />
+                <Sparkles className="h-5 w-5 text-primary" />
                 Most In-Demand Skills
               </CardTitle>
               <CardDescription>
