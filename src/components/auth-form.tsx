@@ -127,16 +127,19 @@ export function AuthForm() {
         description = 'The sign-in popup was blocked by your browser. Please enable popups.';
         break;
       case 'auth/popup-closed-by-user':
-        // No alert needed for manual closure, just clear error
         setSubmissionError(null);
         return;
       case 'auth/too-many-requests':
         title = 'Too Many Requests';
-        description = 'Access to this account has been temporarily disabled due to many failed login attempts. You can immediately restore it by resetting your password or you can try again later.';
+        description = 'Access to this account has been temporarily disabled due to many failed login attempts.';
         break;
       case 'auth/network-request-failed':
         title = 'Network Error';
         description = 'Please check your internet connection and try again.';
+        break;
+      case 'auth/unauthorized-domain':
+        title = 'Configuration Error';
+        description = 'This preview domain must be added to Firebase Authentication → Authorized domains';
         break;
     }
     
@@ -198,7 +201,6 @@ export function AuthForm() {
         forgotPasswordForm.reset();
     } catch (error) {
         const authError = error as AuthError;
-        // Don't leak account existence for reset requests
         if (authError.code === 'auth/user-not-found') {
           toast({
               title: 'Email Sent',
