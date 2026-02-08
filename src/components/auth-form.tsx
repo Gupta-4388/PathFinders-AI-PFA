@@ -13,6 +13,7 @@ import {
   sendPasswordResetEmail,
   GoogleAuthProvider,
   signInWithPopup,
+  fetchSignInMethodsForEmail,
 } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
 
@@ -103,6 +104,10 @@ export function AuthForm() {
         title = 'Email Already in Use';
         description = 'This email address is already associated with an account.';
         break;
+      case 'auth/account-exists-with-different-credential':
+        title = 'Account Already Exists';
+        description = 'An account already exists with the same email address but different sign-in credentials. Please sign in using your original method (Email/Password or Google).';
+        break;
       case 'auth/weak-password':
         title = 'Weak Password';
         description = 'The password must be at least 8 characters long.';
@@ -179,6 +184,11 @@ export function AuthForm() {
     setSubmissionError(null);
     setIsGoogleLoading(true);
     const provider = new GoogleAuthProvider();
+    // Allow for existing email/password accounts to be linked if the email matches
+    provider.setCustomParameters({
+      prompt: 'select_account'
+    });
+    
     try {
       await signInWithPopup(auth, provider);
       toast({

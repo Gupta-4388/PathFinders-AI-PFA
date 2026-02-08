@@ -79,11 +79,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         signUpMethod: providerId || 'unknown',
       };
 
-      if (providerId === 'google.com') {
-          const googleUid = user.providerData.find(p => p.providerId === 'google.com')?.uid;
-          if (googleUid) {
-            userData.googleId = googleUid;
-          }
+      // Ensure we capture Google ID if available to prevent duplicate checks
+      const googleProvider = user.providerData.find(p => p.providerId === 'google.com');
+      if (googleProvider) {
+        userData.googleId = googleProvider.uid;
       }
 
       setDoc(userDocRef, userData, { merge: true })
