@@ -4,15 +4,11 @@
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "User",
       "type": "object",
-      "description": "Represents a user within the PathFinders AI application with synchronized profile data from multiple providers.",
+      "description": "Represents a user within the PathFinders AI application with synchronized profile data.",
       "properties": {
         "id": {
           "type": "string",
           "description": "Unique identifier for the user entity."
-        },
-        "googleId": {
-          "type": "string",
-          "description": "The user's Google ID, obtained from Google authentication."
         },
         "email": {
           "type": "string",
@@ -176,8 +172,7 @@
   "auth": {
     "providers": [
       "password",
-      "anonymous",
-      "google.com"
+      "anonymous"
     ]
   },
   "firestore": {
