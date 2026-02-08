@@ -3,50 +3,34 @@
 
 import * as React from 'react';
 import { Moon, Sun } from 'lucide-react';
-import { Label } from '@/components/ui/label';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useToast } from '@/hooks/use-toast';
+import { SidebarMenuButton } from '@/components/ui/sidebar';
 
 export function ThemeToggle() {
   const { toast } = useToast();
-  const [theme, setTheme] = React.useState('dark');
 
-  React.useEffect(() => {
-    const storedTheme = localStorage.getItem('theme');
-    if (storedTheme) {
-      setTheme(storedTheme);
-    }
-  }, []);
+  const toggleTheme = () => {
+    // Determine the new theme based on the current one
+    const newTheme = document.documentElement.classList.contains('dark') ? 'light' : 'dark';
 
-  const handleThemeChange = (newTheme: 'light' | 'dark') => {
-    setTheme(newTheme);
+    // Persist the new theme
     localStorage.setItem('theme', newTheme);
+    
+    // Apply the new theme
     document.documentElement.classList.remove('light', 'dark');
     document.documentElement.classList.add(newTheme);
+    
     toast({
       title: 'Theme Changed',
-      description: `Switched to ${
-        newTheme.charAt(0).toUpperCase() + newTheme.slice(1)
-      } mode.`,
+      description: `Switched to ${newTheme.charAt(0).toUpperCase() + newTheme.slice(1)} mode.`,
     });
   };
 
   return (
-    <RadioGroup
-      value={theme}
-      onValueChange={(value) => handleThemeChange(value as 'light' | 'dark')}
-      className="grid max-w-sm grid-cols-2 gap-4 pt-2"
-    >
-      <Label className="border-muted hover:border-accent relative flex flex-col items-center justify-center rounded-md border-2 p-4 text-center">
-        <Sun className="mb-2 h-5 w-5" />
-        <RadioGroupItem value="light" id="light" className="sr-only" />
-        Light
-      </Label>
-      <Label className="border-muted hover:border-accent relative flex flex-col items-center justify-center rounded-md border-2 p-4 text-center">
-        <Moon className="mb-2 h-5 w-5" />
-        <RadioGroupItem value="dark" id="dark" className="sr-only" />
-        Dark
-      </Label>
-    </RadioGroup>
+    <SidebarMenuButton onClick={toggleTheme} tooltip="Appearance">
+      <Sun className="block dark:hidden" />
+      <Moon className="hidden dark:block" />
+      <span>Appearance</span>
+    </SidebarMenuButton>
   );
 }

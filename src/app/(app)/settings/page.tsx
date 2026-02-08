@@ -15,7 +15,6 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { ThemeToggle } from '@/components/settings/theme-toggle';
 import { File as FileIcon, Loader2, LogOut, Upload, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useUser, useFirestore, useAuth } from '@/firebase';
@@ -391,101 +390,73 @@ export default function SettingsPage() {
         </CardContent>
       </Card>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="space-y-6">
-          <Card className="transition-transform transform hover:scale-[1.02]">
-            <CardHeader>
-              <CardTitle>Appearance</CardTitle>
-              <CardDescription>
-                Customize the look and feel of the application.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ThemeToggle />
-            </CardContent>
-          </Card>
-          <Card className="transition-transform transform hover:scale-[1.02] block lg:hidden">
-            <CardHeader>
-              <CardTitle>Sign Out</CardTitle>
-              <CardDescription>
-                You will be returned to the login screen.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Button variant="outline" onClick={handleSignOut}>
-                <LogOut className="mr-2 h-4 w-4" />
-                Sign Out
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
-        <div className="space-y-6">
-          <Card className="transition-transform transform hover:scale-[1.02]">
-            <CardHeader>
-              <CardTitle>Change Password</CardTitle>
-              <CardDescription>
-                Update your password here. Choose a strong password.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Form {...changePasswordForm}>
-                <form
-                  onSubmit={changePasswordForm.handleSubmit(handlePasswordSubmit)}
-                  className="space-y-4"
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <Card className="transition-transform transform hover:scale-[1.02]">
+          <CardHeader>
+            <CardTitle>Change Password</CardTitle>
+            <CardDescription>
+              Update your password here. Choose a strong password.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Form {...changePasswordForm}>
+              <form
+                onSubmit={changePasswordForm.handleSubmit(handlePasswordSubmit)}
+                className="space-y-4"
+              >
+                <FormField
+                  control={changePasswordForm.control}
+                  name="currentPassword"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Current Password</FormLabel>
+                      <FormControl>
+                        <Input type="password" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={changePasswordForm.control}
+                  name="newPassword"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>New Password</FormLabel>
+                      <FormControl>
+                        <Input type="password" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={changePasswordForm.control}
+                  name="confirmPassword"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Confirm New Password</FormLabel>
+                      <FormControl>
+                        <Input type="password" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <Button
+                  type="submit"
+                  disabled={changePasswordForm.formState.isSubmitting}
                 >
-                  <FormField
-                    control={changePasswordForm.control}
-                    name="currentPassword"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Current Password</FormLabel>
-                        <FormControl>
-                          <Input type="password" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={changePasswordForm.control}
-                    name="newPassword"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>New Password</FormLabel>
-                        <FormControl>
-                          <Input type="password" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={changePasswordForm.control}
-                    name="confirmPassword"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Confirm New Password</FormLabel>
-                        <FormControl>
-                          <Input type="password" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <Button
-                    type="submit"
-                    disabled={changePasswordForm.formState.isSubmitting}
-                  >
-                    {changePasswordForm.formState.isSubmitting && (
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    )}
-                    Update Password
-                  </Button>
-                </form>
-              </Form>
-            </CardContent>
-          </Card>
-          <Card className="transition-transform transform hover:scale-[1.02] hidden lg:block">
+                  {changePasswordForm.formState.isSubmitting && (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  )}
+                  Update Password
+                </Button>
+              </form>
+            </Form>
+          </CardContent>
+        </Card>
+        <Card className="transition-transform transform hover:scale-[1.02]">
             <CardHeader>
               <CardTitle>Sign Out</CardTitle>
               <CardDescription>
@@ -499,7 +470,6 @@ export default function SettingsPage() {
               </Button>
             </CardContent>
           </Card>
-        </div>
       </div>
     </div>
   );

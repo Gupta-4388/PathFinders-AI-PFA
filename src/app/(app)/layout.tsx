@@ -40,6 +40,7 @@ import { useAuth, useDoc, useFirestore, useUser, errorEmitter, FirestorePermissi
 import { doc, setDoc } from 'firebase/firestore';
 import { cn } from '@/lib/utils';
 import { signOut } from 'firebase/auth';
+import { ThemeToggle } from '@/components/settings/theme-toggle';
 
 const navItems = [
   { href: '/dashboard', icon: LayoutGrid, label: 'Dashboard' },
@@ -163,6 +164,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         </SidebarContent>
         <SidebarFooter>
            <SidebarMenu>
+             <SidebarMenuItem>
+                <ThemeToggle />
+             </SidebarMenuItem>
              <SidebarMenuItem>
                 <SidebarMenuButton onClick={handleSignOut} tooltip="Sign Out">
                     <LogOut />

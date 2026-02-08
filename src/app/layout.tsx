@@ -21,7 +21,7 @@ const ThemeScript = (props: ScriptProps) => (
             if (theme) {
               document.documentElement.classList.add(theme);
             } else {
-               document.documentElement.classList.add('dark');
+               document.documentElement.classList.add('light');
             }
           } catch (e) {
             console.error('Failed to apply theme from localStorage', e);
