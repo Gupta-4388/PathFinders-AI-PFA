@@ -1,7 +1,7 @@
 'use server';
 
 /**
- * @fileOverview Provides job market trend data for visualization based on current industry knowledge.
+ * @fileOverview Provides job market trend data by combining real-time Adzuna API data with AI analysis.
  *
  * - getJobTrends - A function that returns job market trends.
  * - GetJobTrendsOutput - The return type for the getJobTrends function.
@@ -9,6 +9,7 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
+import { fetchJobTrendsFromAPI } from '@/app/actions/job-trends-actions';
 
 const SalaryByExperienceSchema = z.object({
   role: z.string().describe('The job role.'),
@@ -48,13 +49,32 @@ export async function getJobTrends(): Promise<GetJobTrendsOutput> {
 
 const getJobTrendsPrompt = ai.definePrompt({
   name: 'getJobTrendsPrompt',
+  input: {
+    schema: z.object({
+      apiData: z.any().optional().describe('Real-time data from the Adzuna API.')
+    })
+  },
   output: { schema: GetJobTrendsOutputSchema },
-  prompt: `You are a professional job market analyst. Provide current and accurate job market trend data for the following key tech roles: Software Engineer, Data Scientist, Product Manager, DevOps Engineer, UX/UI Designer, and Cybersecurity Analyst. Also provide data on job openings in global tech hubs.
+  prompt: `You are a professional job market analyst. 
+  
+  Use the provided real-time Adzuna API data as your primary source of truth for current salaries and job volumes. 
+  If API data is provided, use it to calibrate your benchmarks for the tech industry.
 
-Provide the following:
-1.  **Salary by Experience**: For each of the six roles, provide the current average annual salary (in USD, without symbols) for "Entry-Level", "Mid-Level", and "Senior-Level" positions based on recent global tech industry benchmarks.
-2.  **Market Demand**: Provide a current demand score (1-100) for each of the six roles based on current hiring volumes and industry growth.
-3.  **Job Openings by Location**: Provide the approximate number of current open tech positions in 5 major global tech hubs (e.g., Bengaluru, San Francisco, London, Hyderabad, Singapore).`,
+  {{#if apiData}}
+  Real-time Market Pulse (Adzuna):
+  - Total Active Listings Sampled: {{apiData.count}}
+  - Representative Listings: 
+    {{#each apiData.listings}}
+    * {{this.title}} in {{this.location}} (Salary Range: {{this.salary_min}} - {{this.salary_max}})
+    {{/each}}
+  {{/if}}
+
+  Provide current and accurate job market trend data for: Software Engineer, Data Scientist, Product Manager, DevOps Engineer, UX/UI Designer, and Cybersecurity Analyst.
+
+  Provide the following:
+  1. **Salary by Experience**: For each role, provide the current average annual salary (USD) for "Entry-Level", "Mid-Level", and "Senior-Level".
+  2. **Market Demand**: Provide a demand score (1-100) for each role.
+  3. **Job Openings by Location**: Provide approximate current open positions in 5 major global tech hubs (e.g., Bengaluru, San Francisco, London, Hyderabad, Singapore).`,
 });
 
 const getJobTrendsFlow = ai.defineFlow(
@@ -63,7 +83,14 @@ const getJobTrendsFlow = ai.defineFlow(
     outputSchema: GetJobTrendsOutputSchema,
   },
   async () => {
-    const { output } = await getJobTrendsPrompt();
+    let apiData = null;
+    try {
+      apiData = await fetchJobTrendsFromAPI();
+    } catch (e) {
+      console.warn('Proceeding with AI baseline as Adzuna API is unavailable:', e);
+    }
+
+    const { output } = await getJobTrendsPrompt({ apiData });
     return output!;
   }
 );
