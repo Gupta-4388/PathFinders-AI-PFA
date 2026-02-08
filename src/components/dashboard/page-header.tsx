@@ -13,7 +13,7 @@ const titleMap: { [key: string]: string } = {
 
 const PageHeader = () => {
   const pathname = usePathname();
-  const title = titleMap[pathname] || 'PathFinder AI';
+  const title = titleMap[pathname] || 'PathFinders AI';
 
   return <h1 className="font-semibold text-lg">{title}</h1>;
 };
