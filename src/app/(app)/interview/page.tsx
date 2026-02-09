@@ -13,7 +13,15 @@ import {
   RefreshCcw,
   Keyboard,
   X,
+  Upload,
+  FileText,
+  AlertCircle,
+  Trophy,
+  Target,
+  BarChart,
+  Lightbulb,
 } from 'lucide-react';
+import { useDropzone } from 'react-dropzone';
 import {
   mockInterviewWithRealtimeFeedback,
 } from '@/ai/flows/mock-interview-flow';
@@ -21,6 +29,8 @@ import {
   analyzeInterviewAnswer,
   AnalyzeInterviewAnswerOutput,
 } from '@/ai/flows/analyze-interview-answer-flow';
+import { validateRoleCompatibility, ValidateRoleCompatibilityOutput } from '@/ai/flows/validate-role-compatibility-flow';
+import { generateFinalReport, GenerateFinalReportOutput } from '@/ai/flows/generate-final-report-flow';
 import { textToSpeech } from '@/ai/flows/text-to-speech-flow';
 import { Button } from '@/components/ui/button';
 import {
@@ -36,48 +46,81 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
-import { useDoc, useFirestore, useUser } from '@/firebase';
-import { doc } from 'firebase/firestore';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Progress } from '@/components/ui/progress';
 
 const SpeechRecognition =
   (typeof window !== 'undefined' && window.SpeechRecognition) ||
   (typeof window !== 'undefined' && window.webkitSpeechRecognition);
 
 type InterviewMode = 'video' | 'audio' | 'text';
-type UserProfile = { resumeDataUri?: string };
+type Difficulty = 'Beginner' | 'Intermediate' | 'Advanced';
+type InterviewType = 'Technical' | 'HR' | 'Behavioral' | 'Mixed';
+
+interface InterviewSessionItem {
+  question: string;
+  answer: string;
+  analysis: AnalyzeInterviewAnswerOutput;
+  score: number;
+}
 
 export default function InterviewPage() {
-  const [domain, setDomain] = useState('');
+  // Config state
+  const [jobRole, setJobRole] = useState('');
+  const [difficulty, setDifficulty] = useState<Difficulty>('Intermediate');
+  const [interviewType, setInterviewType] = useState<InterviewType>('Mixed');
   const [interviewMode, setInterviewMode] = useState<InterviewMode>('text');
+  const [resumeFile, setResumeFile] = useState<File | null>(null);
+  const [resumeText, setResumeText] = useState<string>('');
+  
+  // Status state
   const [interviewStarted, setInterviewStarted] = useState(false);
+  const [isValidating, setIsValidating] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [compatibility, setCompatibility] = useState<ValidateRoleCompatibilityOutput | null>(null);
+  
+  // Session state
   const [currentQuestion, setCurrentQuestion] = useState('');
   const [questionAudio, setQuestionAudio] = useState<string | null>(null);
   const [userAnswer, setUserAnswer] = useState('');
-  const [analysis, setAnalysis] = useState<AnalyzeInterviewAnswerOutput | null>(null);
+  const [sessionHistory, setSessionHistory] = useState<InterviewSessionItem[]>([]);
+  const [finalReport, setFinalReport] = useState<GenerateFinalReportOutput | null>(null);
+  
+  // Recording state
   const [isRecording, setIsRecording] = useState(false);
   const [hasCameraPermission, setHasCameraPermission] = useState(false);
   const [recordingDuration, setRecordingDuration] = useState(0);
   const [recordedMediaUrl, setRecordedMediaUrl] = useState<string | null>(null);
   
   const videoRef = useRef<HTMLVideoElement>(null);
-  const recognitionRef = useRef<SpeechRecognition | null>(null);
+  const recognitionRef = useRef<any>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const recordedChunksRef = useRef<Blob[]>([]);
 
   const { toast } = useToast();
-  const { user } = useUser();
-  const firestore = useFirestore();
 
-  const userDocRef = React.useMemo(
-    () => (user ? doc(firestore, 'users', user.uid) : null),
-    [user, firestore]
-  );
-  const { data: userProfile } = useDoc<UserProfile>(userDocRef);
+  const onDrop = useCallback(async (acceptedFiles: File[]) => {
+    const file = acceptedFiles[0];
+    if (file) {
+      setResumeFile(file);
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const text = e.target?.result as string;
+        setResumeText(text);
+      };
+      reader.readAsText(file);
+    }
+  }, []);
+
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+    onDrop,
+    accept: { 'application/pdf': ['.pdf'], 'text/plain': ['.txt'], 'application/msword': ['.doc', '.docx'] },
+    maxFiles: 1
+  });
 
   useEffect(() => {
     if (isRecording) {
@@ -86,18 +129,10 @@ export default function InterviewPage() {
         setRecordingDuration(Math.floor((Date.now() - startTime) / 1000));
       }, 1000);
     } else {
-      if (timerRef.current) {
-        clearInterval(timerRef.current);
-        timerRef.current = null;
-      }
+      if (timerRef.current) clearInterval(timerRef.current);
       setRecordingDuration(0);
     }
-
-    return () => {
-      if (timerRef.current) {
-        clearInterval(timerRef.current);
-      }
-    };
+    return () => { if (timerRef.current) clearInterval(timerRef.current); };
   }, [isRecording]);
 
   useEffect(() => {
@@ -109,26 +144,16 @@ export default function InterviewPage() {
             audio: true,
           });
           streamRef.current = stream;
-
-          if (interviewMode === 'video') {
+          if (interviewMode === 'video' && videoRef.current) {
             setHasCameraPermission(true);
-            if (videoRef.current) {
-              videoRef.current.srcObject = stream;
-              videoRef.current.play();
-            }
+            videoRef.current.srcObject = stream;
+            videoRef.current.play();
           }
         } catch (error) {
-          console.error('Error accessing media devices:', error);
-          if (interviewMode === 'video') setHasCameraPermission(false);
-          toast({
-            variant: 'destructive',
-            title: 'Media Access Denied',
-            description: 'Please enable camera and microphone permissions in your browser settings.',
-          });
+          toast({ variant: 'destructive', title: 'Media Access Denied', description: 'Enable camera/mic permissions.' });
         }
       };
       getMediaPermission();
-
       return () => {
         streamRef.current?.getTracks().forEach((track) => track.stop());
         streamRef.current = null;
@@ -136,329 +161,301 @@ export default function InterviewPage() {
     }
   }, [interviewStarted, interviewMode, toast]);
 
-  useEffect(() => {
-    if (SpeechRecognition && interviewMode !== 'text') {
-      recognitionRef.current = new SpeechRecognition();
-      recognitionRef.current.continuous = true;
-      recognitionRef.current.interimResults = true;
-      let finalTranscript = '';
-
-      recognitionRef.current.onresult = (event) => {
-        let interimTranscript = '';
-        finalTranscript = '';
-        for (let i = 0; i < event.results.length; ++i) {
-          if (event.results[i].isFinal) {
-            finalTranscript += event.results[i][0].transcript;
-          } else {
-            interimTranscript += event.results[i][0].transcript;
-          }
-        }
-        setUserAnswer(finalTranscript + interimTranscript);
-      };
-
-      recognitionRef.current.onend = () => {
-        setIsRecording(false);
-      };
-    }
-
-    return () => {
-      recognitionRef.current?.stop();
-    }
-  }, [interviewMode]);
-
-  const startInterview = useCallback(async () => {
-    if (!domain) {
-      toast({
-        variant: 'destructive',
-        title: 'Please enter a domain.',
-      });
-      return;
-    }
-    setInterviewStarted(true);
-    setLoading(true);
-
-    if (!userProfile?.resumeDataUri) {
-      toast({
-        variant: 'destructive',
-        title: 'Resume not found',
-        description: 'Please upload a resume on the resume or settings page.',
-      });
-      setInterviewStarted(false);
-      setLoading(false);
-      return;
-    }
-
-    try {
-      const result = await mockInterviewWithRealtimeFeedback({
-        domain,
-        resumeDataUri: userProfile.resumeDataUri,
-      });
-      setCurrentQuestion(result.question);
-      if (result.question) {
-        const audioResult = await textToSpeech(result.question);
-        setQuestionAudio(audioResult.audioDataUri);
-      }
-    } catch (error) {
-      console.error('Error starting interview:', error);
-      toast({
-        variant: 'destructive',
-        title: 'Failed to start interview',
-        description: 'Could not generate the first question. Please try again.',
-      });
-      setInterviewStarted(false);
-    } finally {
-      setLoading(false);
-    }
-  }, [domain, toast, userProfile]);
-
   const toggleRecording = () => {
     if (isRecording) {
       recognitionRef.current?.stop();
       mediaRecorderRef.current?.stop();
       setIsRecording(false);
     } else {
-      if (recordedMediaUrl) {
-        URL.revokeObjectURL(recordedMediaUrl);
-      }
+      if (!streamRef.current && (interviewMode === 'video' || interviewMode === 'audio')) return;
       setUserAnswer('');
       setRecordedMediaUrl(null);
       recordedChunksRef.current = [];
 
-      if (!streamRef.current) {
-        toast({
-          variant: 'destructive',
-          title: 'Media stream not available',
-          description: 'Could not access camera or microphone. Please refresh and try again.',
-        });
-        return;
-      }
-      
       try {
-        mediaRecorderRef.current = new MediaRecorder(streamRef.current);
-        mediaRecorderRef.current.ondataavailable = (event) => {
-          if (event.data.size > 0) {
-            recordedChunksRef.current.push(event.data);
-          }
-        };
-        mediaRecorderRef.current.onstop = () => {
-          const mimeType = interviewMode === 'video' ? 'video/webm' : 'audio/webm';
-          const blob = new Blob(recordedChunksRef.current, { type: mimeType });
-          const url = URL.createObjectURL(blob);
-          setRecordedMediaUrl(url);
-          recordedChunksRef.current = [];
-        };
-        
-        mediaRecorderRef.current.start();
-        if (recognitionRef.current) {
+        if (streamRef.current) {
+          mediaRecorderRef.current = new MediaRecorder(streamRef.current);
+          mediaRecorderRef.current.ondataavailable = (e) => e.data.size > 0 && recordedChunksRef.current.push(e.data);
+          mediaRecorderRef.current.onstop = () => {
+            const blob = new Blob(recordedChunksRef.current, { type: interviewMode === 'video' ? 'video/webm' : 'audio/webm' });
+            setRecordedMediaUrl(URL.createObjectURL(blob));
+          };
+          mediaRecorderRef.current.start();
+        }
+
+        if (SpeechRecognition) {
+          recognitionRef.current = new SpeechRecognition();
+          recognitionRef.current.continuous = true;
+          recognitionRef.current.interimResults = true;
+          recognitionRef.current.onresult = (e: any) => {
+            let transcript = '';
+            for (let i = 0; i < e.results.length; i++) transcript += e.results[i][0].transcript;
+            setUserAnswer(transcript);
+          };
           recognitionRef.current.start();
         }
         setIsRecording(true);
       } catch (e) {
-        console.error("Failed to start media recorder:", e);
-        toast({
-            variant: "destructive",
-            title: "Recording Failed",
-            description: "Could not start recording. Check browser permissions.",
-        });
+        toast({ variant: "destructive", title: "Recording Failed" });
       }
+    }
+  };
+
+  const handleStart = async () => {
+    if (!jobRole.trim() || !resumeText) {
+      toast({ variant: 'destructive', title: 'Setup Incomplete', description: 'Please enter a job role and upload your resume.' });
+      return;
+    }
+
+    setIsValidating(true);
+    try {
+      const val = await validateRoleCompatibility({ jobRole, resumeText });
+      setCompatibility(val);
+      if (val.isCompatible) {
+        setInterviewStarted(true);
+        fetchNextQuestion(true);
+      }
+    } catch (e) {
+      toast({ variant: 'destructive', title: 'Validation Error' });
+    } finally {
+      setIsValidating(false);
+    }
+  };
+
+  const fetchNextQuestion = async (isFirst = false) => {
+    setLoading(true);
+    try {
+      const history = sessionHistory.map(h => ({ question: h.question, answer: h.answer }));
+      const result = await mockInterviewWithRealtimeFeedback({
+        jobRole,
+        difficulty,
+        interviewType,
+        resumeText,
+        history
+      });
+      setCurrentQuestion(result.question);
+      if (result.question) {
+        const audio = await textToSpeech(result.question);
+        setQuestionAudio(audio.audioDataUri);
+      }
+    } catch (e) {
+      toast({ variant: 'destructive', title: 'Failed to generate question' });
+    } finally {
+      setLoading(false);
     }
   };
 
   const submitAnswer = async () => {
-    if (isRecording) {
-      recognitionRef.current?.stop();
-      mediaRecorderRef.current?.stop();
-      setIsRecording(false);
+    if (!userAnswer.trim()) return;
+    setLoading(true);
+    try {
+      const feedback = await analyzeInterviewAnswer({ question: currentQuestion, answer: userAnswer });
+      const newItem: InterviewSessionItem = {
+        question: currentQuestion,
+        answer: userAnswer,
+        analysis: feedback,
+        score: feedback.score
+      };
+      setSessionHistory(prev => [...prev, newItem]);
+      toast({ title: 'Answer Submitted', description: `Score: ${feedback.score}%` });
+      setCurrentQuestion('');
+      setUserAnswer('');
+      setRecordedMediaUrl(null);
+      fetchNextQuestion();
+    } catch (e) {
+      toast({ variant: 'destructive', title: 'Submission failed' });
+    } finally {
+      setLoading(false);
     }
-    if (!userAnswer.trim()) {
-      toast({
-        variant: 'destructive',
-        title: 'Please provide an answer.',
-      });
+  };
+
+  const handleEndInterview = async () => {
+    if (sessionHistory.length === 0) {
+      setInterviewStarted(false);
       return;
     }
     setLoading(true);
     try {
-      const analysisResult = await analyzeInterviewAnswer({
-        question: currentQuestion,
-        answer: userAnswer,
-      });
-      setAnalysis(analysisResult);
-    } catch (error) {
-       toast({
-        variant: 'destructive',
-        title: 'Analysis Failed',
-        description: 'Could not analyze your answer. Please try again.',
-      });
+      const report = await generateFinalReport({ jobRole, resumeText, history: sessionHistory });
+      setFinalReport(report);
+    } catch (e) {
+      toast({ variant: 'destructive', title: 'Report generation failed' });
     } finally {
       setLoading(false);
     }
   };
 
-  const nextQuestion = async () => {
-    setLoading(true);
-    setCurrentQuestion('');
-    setUserAnswer('');
-    setAnalysis(null);
-    setQuestionAudio(null);
-    if (recordedMediaUrl) {
-      URL.revokeObjectURL(recordedMediaUrl);
-      setRecordedMediaUrl(null);
-    }
-    if (!userProfile?.resumeDataUri) return;
-    try {
-      const result = await mockInterviewWithRealtimeFeedback({
-        domain,
-        resumeDataUri: userProfile.resumeDataUri,
-      });
-      setCurrentQuestion(result.question);
-      if (result.question) {
-        const audioResult = await textToSpeech(result.question);
-        setQuestionAudio(audioResult.audioDataUri);
-      }
-    } catch (error) {
-      toast({
-        variant: 'destructive',
-        title: 'Failed to get next question',
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
+  if (finalReport) {
+    return (
+      <div className="max-w-4xl mx-auto space-y-6 animate-fade-in-up">
+        <Card className="border-primary/20 shadow-xl overflow-hidden">
+          <CardHeader className="bg-primary/10 border-b">
+            <div className="flex justify-between items-center">
+              <div>
+                <CardTitle className="text-2xl font-bold flex items-center gap-2">
+                  <Trophy className="text-yellow-500" /> Interview Report
+                </CardTitle>
+                <CardDescription>Target Role: {jobRole}</CardDescription>
+              </div>
+              <div className="text-right">
+                <p className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Overall Score</p>
+                <p className="text-4xl font-black text-primary">{finalReport.overallScore}%</p>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="pt-6 space-y-8">
+            <div className="grid md:grid-cols-2 gap-6">
+              <div className="space-y-4">
+                <h3 className="font-bold text-lg flex items-center gap-2"><Target className="w-5 h-5 text-green-500" /> Key Strengths</h3>
+                <ul className="space-y-2">
+                  {finalReport.strengths.map((s, i) => (
+                    <li key={i} className="flex items-start gap-2 text-sm bg-muted p-2 rounded-md">
+                      <div className="w-1.5 h-1.5 rounded-full bg-green-500 mt-1.5 shrink-0" />
+                      {s}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <div className="space-y-4">
+                <h3 className="font-bold text-lg flex items-center gap-2"><AlertCircle className="w-5 h-5 text-red-500" /> Areas to Improve</h3>
+                <ul className="space-y-2">
+                  {finalReport.weaknesses.map((w, i) => (
+                    <li key={i} className="flex items-start gap-2 text-sm bg-muted p-2 rounded-md">
+                      <div className="w-1.5 h-1.5 rounded-full bg-red-500 mt-1.5 shrink-0" />
+                      {w}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
 
-  const endInterview = () => {
-    setInterviewStarted(false);
-    setCurrentQuestion('');
-    setQuestionAudio(null);
-    setUserAnswer('');
-    setAnalysis(null);
-    setLoading(false);
-    setIsRecording(false);
-    setHasCameraPermission(false);
+            <div className="space-y-4">
+              <h3 className="font-bold text-lg flex items-center gap-2"><BarChart className="w-5 h-5 text-blue-500" /> Skill Gaps for {jobRole}</h3>
+              <div className="flex flex-wrap gap-2">
+                {finalReport.skillGaps.map((gap, i) => (
+                  <Badge key={i} variant="outline" className="text-sm py-1 px-3 border-blue-500/30 bg-blue-500/5">{gap}</Badge>
+                ))}
+              </div>
+            </div>
 
-    if (streamRef.current) {
-        streamRef.current.getTracks().forEach((track) => track.stop());
-        streamRef.current = null;
-    }
+            <Alert className="bg-primary/5 border-primary/20">
+              <Lightbulb className="w-5 h-5 text-primary" />
+              <AlertTitle className="font-bold">AI Improvement Suggestions</AlertTitle>
+              <AlertDescription className="text-sm">{finalReport.improvementSuggestions}</AlertDescription>
+            </Alert>
 
-    if (videoRef.current?.srcObject) {
-      const stream = videoRef.current.srcObject as MediaStream;
-      stream.getTracks().forEach((track) => track.stop());
-      videoRef.current.srcObject = null;
-    }
+            <div className="pt-6 border-t">
+              <p className="font-bold mb-2">Final Verdict</p>
+              <p className="text-muted-foreground italic">&quot;{finalReport.readinessVerdict}&quot;</p>
+            </div>
 
-    if (recordedMediaUrl) {
-      URL.revokeObjectURL(recordedMediaUrl);
-      setRecordedMediaUrl(null);
-    }
-
-    if (recognitionRef.current) {
-      recognitionRef.current.stop();
-    }
-
-    toast({
-      title: 'Interview Ended',
-      description: 'You have returned to the setup screen.',
-    });
-  };
-
-  const formatDuration = (seconds: number) => {
-    const minutes = Math.floor(seconds / 60);
-    const remainingSeconds = seconds % 60;
-    return `${String(minutes).padStart(2, '0')}:${String(
-      remainingSeconds
-    ).padStart(2, '0')}`;
-  };
+            <Button onClick={() => window.location.reload()} className="w-full h-12 text-lg font-bold">
+              Try Another Session <RefreshCcw className="ml-2 w-5 h-5" />
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   if (!interviewStarted) {
     return (
-      <div className="flex justify-center items-center h-full animate-pop-in p-4 sm:p-0">
-        <Card className="w-full max-w-lg transition-transform transform hover:scale-[1.02]">
+      <div className="max-w-3xl mx-auto p-4 sm:p-0 animate-fade-in-up">
+        <Card className="shadow-2xl border-primary/10">
           <CardHeader className="text-center">
-            <CardTitle className="text-3xl">Mock Interview Simulator</CardTitle>
-            <CardDescription>
-              Prepare for your next interview. Choose your settings to begin.
-            </CardDescription>
+            <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+              <img src="https://github.com/Gupta-4388/PFA-logo/blob/main/PFA-Mock%202.png?raw=true" alt="Mock 2" className="w-12 h-12" />
+            </div>
+            <CardTitle className="text-3xl font-bold">Interview Simulator Pro</CardTitle>
+            <CardDescription>Setup your session. We'll validate your resume against the role.</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-8 pt-6">
+          <CardContent className="space-y-8">
+            <div className="grid md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <Label className="font-bold">Target Job Role</Label>
+                <Input 
+                  placeholder="e.g. Full Stack Developer, Marketing Lead" 
+                  value={jobRole} 
+                  onChange={e => setJobRole(e.target.value)}
+                  className="h-11"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="font-bold">Interview Mode</Label>
+                <Select value={interviewMode} onValueChange={v => setInterviewMode(v as InterviewMode)}>
+                  <SelectTrigger className="h-11">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="text">Text-Based</SelectItem>
+                    <SelectItem value="audio">Audio Interview</SelectItem>
+                    <SelectItem value="video">Video Interview</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="grid md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <Label className="font-bold">Difficulty Level</Label>
+                <Select value={difficulty} onValueChange={v => setDifficulty(v as Difficulty)}>
+                  <SelectTrigger className="h-11">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Beginner">Beginner (Entry Level)</SelectItem>
+                    <SelectItem value="Intermediate">Intermediate (Mid Level)</SelectItem>
+                    <SelectItem value="Advanced">Advanced (Senior/Staff)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label className="font-bold">Focus Area</Label>
+                <Select value={interviewType} onValueChange={v => setInterviewType(v as InterviewType)}>
+                  <SelectTrigger className="h-11">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Mixed">General Mixed</SelectItem>
+                    <SelectItem value="Technical">Strictly Technical</SelectItem>
+                    <SelectItem value="Behavioral">Behavioral (STAR Method)</SelectItem>
+                    <SelectItem value="HR">HR & Culture Fit</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
             <div className="space-y-2">
-              <Label htmlFor="domain" className="text-base font-semibold">
-                Interview Domain
-              </Label>
-              <Input
-                id="domain"
-                placeholder="e.g., Software Engineering, Product Management"
-                value={domain}
-                onChange={(e) => setDomain(e.target.value)}
-                className="h-12 text-base"
-              />
+              <Label className="font-bold">Upload Interview Resume</Label>
+              <div {...getRootProps()} className={cn(
+                "border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-all",
+                isDragActive ? "border-primary bg-primary/5" : "border-muted hover:border-primary/50"
+              )}>
+                <input {...getInputProps()} />
+                <Upload className="mx-auto w-10 h-10 text-muted-foreground mb-2" />
+                <p className="font-medium">{resumeFile ? resumeFile.name : "Drag resume here or click to browse"}</p>
+                <p className="text-xs text-muted-foreground mt-1">PDF or TXT required for role validation</p>
+              </div>
             </div>
-            <div className="space-y-4">
-              <Label className="text-base font-semibold">Interview Mode</Label>
-              <RadioGroup
-                value={interviewMode}
-                onValueChange={(value) =>
-                  setInterviewMode(value as InterviewMode)
-                }
-                className="grid grid-cols-1 sm:grid-cols-3 gap-4"
-              >
-                <div>
-                  <RadioGroupItem
-                    value="text"
-                    id="text"
-                    className="peer sr-only"
-                  />
-                  <Label
-                    htmlFor="text"
-                    className="flex flex-col items-center justify-center rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer h-full"
-                  >
-                    <Keyboard className="mb-3 h-6 w-6" />
-                    Text-based
-                  </Label>
-                </div>
-                <div>
-                  <RadioGroupItem
-                    value="audio"
-                    id="audio"
-                    className="peer sr-only"
-                  />
-                  <Label
-                    htmlFor="audio"
-                    className="flex flex-col items-center justify-center rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer h-full"
-                  >
-                    <Mic className="mb-3 h-6 w-6" />
-                    Audio Interview
-                  </Label>
-                </div>
-                <div>
-                  <RadioGroupItem
-                    value="video"
-                    id="video"
-                    className="peer sr-only"
-                  />
-                  <Label
-                    htmlFor="video"
-                    className="flex flex-col items-center justify-center rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer h-full"
-                  >
-                    <Video className="mb-3 h-6 w-6" />
-                    Video Interview
-                  </Label>
-                </div>
-              </RadioGroup>
-            </div>
-            <Button
-              onClick={startInterview}
-              className="w-full h-12 text-lg"
-              size="lg"
-              disabled={loading}
-            >
-              {loading ? (
-                <Loader2 className="animate-spin" />
-              ) : (
-                <>
-                  Start Interview <ArrowRight className="ml-2" />
-                </>
-              )}
+
+            {compatibility && !compatibility.isCompatible && (
+              <Alert variant="destructive" className="animate-pop-in">
+                <AlertCircle className="h-4 w-4" />
+                <AlertTitle>Incompatible Resume</AlertTitle>
+                <AlertDescription>
+                  {compatibility.feedback} 
+                  <div className="mt-2">
+                    <p className="font-bold">Missing Skills:</p>
+                    <div className="flex flex-wrap gap-1 mt-1">
+                      {compatibility.missingSkills.map(s => <Badge key={s} variant="outline" className="text-[10px]">{s}</Badge>)}
+                    </div>
+                  </div>
+                </AlertDescription>
+              </Alert>
+            )}
+
+            <Button onClick={handleStart} className="w-full h-12 text-lg font-bold" disabled={isValidating}>
+              {isValidating ? <Loader2 className="animate-spin mr-2" /> : "Start Mock Interview"}
             </Button>
           </CardContent>
         </Card>
@@ -467,192 +464,89 @@ export default function InterviewPage() {
   }
 
   return (
-    <div className="w-full max-w-4xl mx-auto flex flex-col gap-6 animate-fade-in-up">
+    <div className="max-w-4xl mx-auto flex flex-col gap-6 animate-fade-in-up">
       {questionAudio && <audio src={questionAudio} autoPlay />}
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle className="text-xl font-semibold">Interview Question</CardTitle>
-          <Button variant="destructive" size="sm" onClick={endInterview}>
-            <X className="mr-2 h-4 w-4" />
-            End Interview
-          </Button>
+      
+      <div className="flex justify-between items-center">
+        <div className="flex gap-2">
+          <Badge variant="secondary">{jobRole}</Badge>
+          <Badge variant="outline" className="capitalize">{difficulty}</Badge>
+          <Badge variant="outline">{interviewType}</Badge>
+        </div>
+        <Button variant="destructive" size="sm" onClick={handleEndInterview}>
+          <X className="mr-2 h-4 w-4" /> End & Generate Report
+        </Button>
+      </div>
+
+      <Card className="border-primary/20 bg-primary/5">
+        <CardHeader>
+          <CardTitle className="text-lg font-bold">Interviewer Question</CardTitle>
         </CardHeader>
-        <CardContent className="text-base text-muted-foreground min-h-[80px] flex items-center">
+        <CardContent className="text-xl font-medium min-h-[100px] flex items-center">
           {loading && !currentQuestion ? (
-            <Loader2 className="w-6 h-6 animate-spin text-primary" />
+            <div className="flex items-center gap-3"><Loader2 className="w-6 h-6 animate-spin" /><span>Generating next question...</span></div>
           ) : (
-            <p>{currentQuestion}</p>
+            <p className="leading-relaxed">{currentQuestion}</p>
           )}
         </CardContent>
       </Card>
 
-      <div className="flex-grow">
-        {analysis ? (
-          <Card className="animate-pop-in">
-            <CardHeader>
-              <CardTitle>AI Feedback</CardTitle>
-              <CardDescription>
-                Overall Score:{' '}
-                <Badge
-                  className={cn(
-                    'ml-2 text-lg',
-                    analysis.score > 80
-                      ? 'bg-green-500/20 text-green-400 border-green-500/30'
-                      : analysis.score > 60
-                      ? 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30'
-                      : 'bg-red-500/20 text-red-400 border-red-500/30'
-                  )}
-                >
-                  {analysis.score}%
-                </Badge>
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="space-y-2">
-                <h4 className="font-semibold text-primary">Clarity:</h4>
-                <p className="text-muted-foreground">{analysis.analysis?.clarity}</p>
-              </div>
-              <div className="space-y-2">
-                <h4 className="font-semibold text-primary">Content:</h4>
-                <p className="text-muted-foreground">{analysis.analysis?.content}</p>
-              </div>
-              <div className="space-y-2">
-                <h4 className="font-semibold text-primary">Improvement Tips:</h4>
-                <p className="text-muted-foreground">{analysis.improvementTips}</p>
-              </div>
-              <Button onClick={nextQuestion} className="w-full h-11 text-base">
-                Next Question <RefreshCcw className="ml-2" />
+      <Card className="shadow-lg">
+        <CardHeader>
+          <CardTitle>Your Answer</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {interviewMode === 'video' && (
+            <div className="aspect-video bg-black rounded-lg relative overflow-hidden group">
+              <video ref={videoRef} className="w-full h-full object-cover" autoPlay playsInline muted />
+              {isRecording && (
+                <div className="absolute top-4 left-4 bg-red-600 text-white px-3 py-1 rounded-full text-xs font-bold animate-pulse flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-white" /> REC {recordingDuration}s
+                </div>
+              )}
+            </div>
+          )}
+
+          {interviewMode === 'audio' && (
+            <div className="h-32 bg-muted rounded-lg flex flex-col items-center justify-center gap-3">
+              <Mic className={cn("w-12 h-12", isRecording ? "text-red-500 animate-pulse" : "text-muted-foreground")} />
+              <p className="text-sm font-bold">{isRecording ? `Recording... ${recordingDuration}s` : "Microphone Ready"}</p>
+            </div>
+          )}
+
+          <Textarea 
+            placeholder="Type your answer or speak..."
+            className="min-h-[200px] text-lg resize-none"
+            value={userAnswer}
+            onChange={e => setUserAnswer(e.target.value)}
+            disabled={loading || isRecording}
+          />
+
+          <div className="flex justify-between gap-4">
+            {interviewMode !== 'text' && (
+              <Button variant="outline" className="h-12 px-8 font-bold" onClick={toggleRecording} disabled={loading}>
+                {isRecording ? <><MicOff className="mr-2" /> Stop Recording</> : <><Mic className="mr-2" /> {userAnswer ? "Record Again" : "Start Speaking"}</>}
               </Button>
-            </CardContent>
-          </Card>
-        ) : (
-          <Card className="flex flex-col flex-grow">
-            <CardHeader>
-              <CardTitle>Your Answer</CardTitle>
-            </CardHeader>
-            <CardContent className="flex-grow flex flex-col gap-4">
-              {interviewMode === 'video' && (
-                <div className="aspect-video bg-muted rounded-md flex items-center justify-center relative overflow-hidden">
-                  {recordedMediaUrl && !isRecording ? (
-                    <video key={recordedMediaUrl} src={recordedMediaUrl} controls className="w-full h-full object-cover" autoPlay />
-                  ) : (
-                    <>
-                      <video
-                        ref={videoRef}
-                        className="w-full h-full object-cover"
-                        autoPlay
-                        playsInline
-                        muted
-                      />
-                      {isRecording && (
-                        <div className="absolute top-2 left-2 bg-red-500/80 text-white px-2 py-1 rounded-md text-sm font-mono flex items-center gap-2">
-                          <div className="w-2 h-2 rounded-full bg-white animate-pulse"></div>
-                          <span>{formatDuration(recordingDuration)}</span>
-                        </div>
-                      )}
-                      {!hasCameraPermission && (
-                        <Alert variant="destructive" className="absolute w-auto m-4">
-                          <VideoOff className="h-4 w-4" />
-                          <AlertTitle>Camera Access Required</AlertTitle>
-                          <AlertDescription>
-                            Please allow camera access to use this feature.
-                          </AlertDescription>
-                        </Alert>
-                      )}
-                    </>
-                  )}
-                </div>
-              )}
+            )}
+            <Button className="h-12 flex-1 text-lg font-bold" onClick={submitAnswer} disabled={loading || !userAnswer.trim() || isRecording}>
+              {loading ? <Loader2 className="animate-spin" /> : <><Send className="mr-2" /> Submit Answer</>}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
 
-              {interviewMode === 'audio' && (
-                <div className="h-32 flex flex-col items-center justify-center bg-muted rounded-md gap-4">
-                  <Mic
-                    className={cn(
-                      'w-10 h-10 text-muted-foreground transition-colors',
-                      isRecording && 'text-red-500 animate-pulse'
-                    )}
-                  />
-                  {isRecording ? (
-                    <div className="text-center">
-                      <p className="text-sm text-red-500">Recording your answer...</p>
-                      <p className="text-sm font-mono text-red-500">{formatDuration(recordingDuration)}</p>
-                    </div>
-                  ) : (
-                    <p className="text-sm text-muted-foreground">
-                      {recordedMediaUrl ? 'Recording finished. Review below.' : 'Get ready to speak'}
-                    </p>
-                  )}
-                </div>
-              )}
-
-              {recordedMediaUrl && !isRecording && interviewMode === 'audio' && (
-                <div className="space-y-2 animate-fade-in-up">
-                    <Label>Review Your Answer</Label>
-                    <audio key={recordedMediaUrl} src={recordedMediaUrl} controls className="w-full" />
-                </div>
-              )}
-
-              <Textarea
-                placeholder={
-                  interviewMode === 'text'
-                    ? 'Type your answer here...'
-                    : 'Your answer will be transcribed here... or you can type.'
-                }
-                value={userAnswer}
-                onChange={(e) => setUserAnswer(e.target.value)}
-                className="w-full flex-grow min-h-[150px] text-base"
-                disabled={loading || isRecording}
-              />
-
-              <div className="flex justify-between items-center mt-2">
-                {interviewMode !== 'text' ? (
-                  <Button
-                    onClick={toggleRecording}
-                    variant="secondary"
-                    size="lg"
-                    className="h-11"
-                    disabled={loading}
-                  >
-                    {isRecording ? (
-                      <>
-                        <MicOff className="mr-2 text-red-500" /> Stop Recording
-                      </>
-                    ) : (recordedMediaUrl || userAnswer.trim()) ? (
-                      <>
-                        <RefreshCcw className="mr-2" /> Record Again
-                      </>
-                    ) : (
-                      <>
-                        <Mic className="mr-2" /> Start Recording
-                      </>
-                    )}
-                  </Button>
-                ) : (
-                  <div />
-                )}
-                <Button
-                  onClick={submitAnswer}
-                  disabled={loading || !userAnswer.trim() || isRecording}
-                  size="lg"
-                  className="h-11"
-                >
-                  {loading ? (
-                    <Loader2 className="animate-spin" />
-                  ) : (
-                    <>
-                      Submit Answer <Send className="ml-2" />
-                    </>
-                  )}
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        )}
+      <div className="space-y-4">
+        <p className="text-sm font-bold text-muted-foreground uppercase tracking-widest">Session Progress</p>
+        <div className="grid grid-cols-5 sm:grid-cols-10 gap-2">
+          {sessionHistory.map((h, i) => (
+            <div key={i} className={cn(
+              "h-2 rounded-full",
+              h.score > 80 ? "bg-green-500" : h.score > 60 ? "bg-yellow-500" : "bg-red-500"
+            )} />
+          ))}
+          {loading && <div className="h-2 rounded-full bg-muted animate-pulse" />}
+        </div>
       </div>
     </div>
   );
 }
-
-    
-
-    
