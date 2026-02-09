@@ -10,7 +10,7 @@ import { z } from 'genkit';
 
 const ValidateRoleCompatibilityInputSchema = z.object({
   jobRole: z.string().describe('The job role the user is targeting.'),
-  resumeText: z.string().describe("The text extracted from the user's resume."),
+  resumeDataUri: z.string().describe("The resume file as a data URI (PDF, DOCX, or Image)."),
 });
 export type ValidateRoleCompatibilityInput = z.infer<typeof ValidateRoleCompatibilityInputSchema>;
 
@@ -20,6 +20,7 @@ const ValidateRoleCompatibilityOutputSchema = z.object({
   missingSkills: z.array(z.string()).describe('Critical skills for the role that are missing from the resume.'),
   foundationalSkills: z.array(z.string()).describe('Skills found in the resume that match the role.'),
   feedback: z.string().describe("Advice on why the resume is or isn't compatible."),
+  parsingError: z.boolean().describe('Set to true if the document could not be read or is not a valid resume.'),
 });
 export type ValidateRoleCompatibilityOutput = z.infer<typeof ValidateRoleCompatibilityOutputSchema>;
 
@@ -33,15 +34,15 @@ const compatibilityPrompt = ai.definePrompt({
   name: 'validateRoleCompatibilityPrompt',
   input: { schema: ValidateRoleCompatibilityInputSchema },
   output: { schema: ValidateRoleCompatibilityOutputSchema },
-  prompt: `You are an expert technical recruiter. Analyze the provided resume text against the requirements for the job role: "{{{jobRole}}}".
+  prompt: `You are an expert technical recruiter. Analyze the provided resume document against the requirements for the job role: "{{{jobRole}}}".
 
-Resume Text:
-{{{resumeText}}}
+Resume Document:
+{{media url=resumeDataUri}}
 
 Evaluate the compatibility using a weighted system:
 1. Identify Mandatory (core), Important (preferred), and Optional (bonus) skills for a "{{{jobRole}}}".
 2. Calculate a Match Score (0-100) based on how well the resume satisfies these categories.
-3. If the resume contains the basic foundations or related skills (even if not an exact match), give credit.
+3. If the document is unreadable, blurry, or clearly not a resume, set 'parsingError' to true and 'matchScore' to 0.
 4. If the Match Score is 40 or higher, set isCompatible to true.
 5. List the foundational skills found and the critical missing ones.
 6. Provide professional feedback. If the score is between 40-59, mention it's a partial match. If below 40, explain why it's too low for a realistic interview.

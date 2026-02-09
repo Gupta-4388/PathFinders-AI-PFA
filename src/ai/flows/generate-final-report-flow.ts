@@ -10,7 +10,7 @@ import { z } from 'genkit';
 
 const GenerateFinalReportInputSchema = z.object({
   jobRole: z.string(),
-  resumeText: z.string(),
+  resumeDataUri: z.string().optional(),
   history: z.array(z.object({
     question: z.string(),
     answer: z.string(),
@@ -45,8 +45,10 @@ const reportPrompt = ai.definePrompt({
   output: { schema: GenerateFinalReportOutputSchema },
   prompt: `You are an expert interview evaluator. Review the following mock interview transcript for the role of "{{{jobRole}}}".
 
+{{#if resumeDataUri}}
 Candidate Resume Context:
-{{{resumeText}}}
+{{media url=resumeDataUri}}
+{{/if}}
 
 Interview History:
 {{#each history}}

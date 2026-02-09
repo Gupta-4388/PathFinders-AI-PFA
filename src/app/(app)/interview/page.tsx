@@ -75,7 +75,7 @@ export default function InterviewPage() {
   const [interviewType, setInterviewType] = useState<InterviewType>('Mixed');
   const [interviewMode, setInterviewMode] = useState<InterviewMode>('text');
   const [resumeFile, setResumeFile] = useState<File | null>(null);
-  const [resumeText, setResumeText] = useState<string>('');
+  const [resumeDataUri, setResumeDataUri] = useState<string>('');
   
   // Status state
   const [interviewStarted, setInterviewStarted] = useState(false);
@@ -112,16 +112,21 @@ export default function InterviewPage() {
       setResumeFile(file);
       const reader = new FileReader();
       reader.onload = (e) => {
-        const text = e.target?.result as string;
-        setResumeText(text);
+        const dataUri = e.target?.result as string;
+        setResumeDataUri(dataUri);
       };
-      reader.readAsText(file);
+      reader.readAsDataURL(file);
     }
   }, []);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
-    accept: { 'application/pdf': ['.pdf'], 'text/plain': ['.txt'], 'application/msword': ['.doc', '.docx'] },
+    accept: { 
+      'application/pdf': ['.pdf'], 
+      'text/plain': ['.txt'], 
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx'],
+      'application/msword': ['.doc']
+    },
     maxFiles: 1
   });
 
@@ -205,7 +210,7 @@ export default function InterviewPage() {
   };
 
   const handleStart = async () => {
-    if (!jobRole.trim() || !resumeText) {
+    if (!jobRole.trim() || !resumeDataUri) {
       toast({ variant: 'destructive', title: 'Setup Incomplete', description: 'Please enter a job role and upload your resume.' });
       return;
     }
@@ -213,13 +218,13 @@ export default function InterviewPage() {
     setIsValidating(true);
     setShowWarning(false);
     try {
-      const val = await validateRoleCompatibility({ jobRole, resumeText });
+      const val = await validateRoleCompatibility({ jobRole, resumeDataUri });
       setCompatibility(val);
       
-      if (val.matchScore >= 60) {
+      if (val.matchScore >= 60 && !val.parsingError) {
         setInterviewStarted(true);
         fetchNextQuestion(true, val.missingSkills);
-      } else if (val.matchScore >= 40) {
+      } else if (val.matchScore >= 40 || val.parsingError) {
         setShowWarning(true);
       } else {
         // matchScore < 40, handled by Alert UI
@@ -244,7 +249,7 @@ export default function InterviewPage() {
         jobRole,
         difficulty,
         interviewType,
-        resumeText,
+        resumeDataUri,
         missingSkills,
         history
       });
@@ -291,7 +296,7 @@ export default function InterviewPage() {
     }
     setLoading(true);
     try {
-      const report = await generateFinalReport({ jobRole, resumeText, history: sessionHistory });
+      const report = await generateFinalReport({ jobRole, resumeDataUri, history: sessionHistory });
       setFinalReport(report);
     } catch (e) {
       toast({ variant: 'destructive', title: 'Report generation failed' });
@@ -455,7 +460,15 @@ export default function InterviewPage() {
 
             {compatibility && (
               <div className="space-y-4 animate-pop-in">
-                {compatibility.matchScore >= 60 ? (
+                {compatibility.parsingError ? (
+                  <Alert className="border-yellow-500/50 bg-yellow-500/5">
+                    <AlertTriangle className="h-4 w-4 text-yellow-500" />
+                    <AlertTitle className="text-yellow-700">Analysis Warning</AlertTitle>
+                    <AlertDescription className="text-yellow-600/80">
+                      Resume uploaded successfully, but some content could not be fully analyzed. You can still proceed with the interview.
+                    </AlertDescription>
+                  </Alert>
+                ) : compatibility.matchScore >= 60 ? (
                   <Alert className="border-green-500/50 bg-green-500/5">
                     <CheckCircle2 className="h-4 w-4 text-green-500" />
                     <AlertTitle className="text-green-700">Strong Match ({compatibility.matchScore}%)</AlertTitle>
@@ -472,22 +485,6 @@ export default function InterviewPage() {
                         Your resume partially matches the selected role. You can still proceed with the mock interview to test your skills.
                       </AlertDescription>
                     </Alert>
-                    
-                    <div className="p-4 border rounded-lg bg-muted/30 space-y-3">
-                      <div className="flex flex-wrap gap-2">
-                        <span className="text-xs font-bold uppercase text-muted-foreground w-full">Foundational Skills Found:</span>
-                        {compatibility.foundationalSkills.map(s => <Badge key={s} variant="secondary" className="text-[10px]">{s}</Badge>)}
-                      </div>
-                      <div className="flex flex-wrap gap-2">
-                        <span className="text-xs font-bold uppercase text-muted-foreground w-full">Missing Critical Skills:</span>
-                        {compatibility.missingSkills.map(s => <Badge key={s} variant="outline" className="text-[10px] border-yellow-500/30">{s}</Badge>)}
-                      </div>
-                    </div>
-
-                    <div className="flex gap-3">
-                      <Button onClick={proceedWithInterview} className="flex-1 font-bold">Proceed Anyway</Button>
-                      <Button variant="outline" onClick={() => setCompatibility(null)} className="flex-1 font-bold">Update Resume</Button>
-                    </div>
                   </div>
                 ) : (
                   <div className="space-y-4">
@@ -498,20 +495,34 @@ export default function InterviewPage() {
                         {compatibility.feedback}
                       </AlertDescription>
                     </Alert>
-                    <div className="p-4 border border-red-200 rounded-lg bg-red-50/30 space-y-2">
-                      <p className="text-xs font-bold uppercase text-red-600">Missing Critical Skills for {jobRole}:</p>
-                      <div className="flex flex-wrap gap-1">
-                        {compatibility.missingSkills.map(s => <Badge key={s} variant="outline" className="text-[10px] border-red-500/30 text-red-600">{s}</Badge>)}
-                      </div>
+                  </div>
+                )}
+                
+                {(compatibility.matchScore >= 40 || compatibility.parsingError) && (
+                  <div className="p-4 border rounded-lg bg-muted/30 space-y-3">
+                    <div className="flex flex-wrap gap-2">
+                      <span className="text-xs font-bold uppercase text-muted-foreground w-full">Foundational Skills Found:</span>
+                      {compatibility.foundationalSkills.length > 0 ? compatibility.foundationalSkills.map(s => <Badge key={s} variant="secondary" className="text-[10px]">{s}</Badge>) : <span className="text-xs text-muted-foreground">None detected</span>}
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      <span className="text-xs font-bold uppercase text-muted-foreground w-full">Missing Critical Skills:</span>
+                      {compatibility.missingSkills.length > 0 ? compatibility.missingSkills.map(s => <Badge key={s} variant="outline" className="text-[10px] border-yellow-500/30">{s}</Badge>) : <span className="text-xs text-muted-foreground">None detected</span>}
                     </div>
                   </div>
                 )}
+
+                <div className="flex gap-3">
+                  {(compatibility.matchScore >= 40 || compatibility.parsingError) && (
+                    <Button onClick={proceedWithInterview} className="flex-1 font-bold">Proceed with Interview</Button>
+                  )}
+                  <Button variant="outline" onClick={() => setCompatibility(null)} className="flex-1 font-bold">Re-upload Resume</Button>
+                </div>
               </div>
             )}
 
-            {!showWarning && (
-              <Button onClick={handleStart} className="w-full h-12 text-lg font-bold" disabled={isValidating || (compatibility && compatibility.matchScore < 40)}>
-                {isValidating ? <Loader2 className="animate-spin mr-2" /> : compatibility ? "Re-validate Resume" : "Start Mock Interview"}
+            {!compatibility && (
+              <Button onClick={handleStart} className="w-full h-12 text-lg font-bold" disabled={isValidating}>
+                {isValidating ? <Loader2 className="animate-spin mr-2" /> : "Analyze & Start"}
               </Button>
             )}
           </CardContent>
@@ -530,7 +541,7 @@ export default function InterviewPage() {
           <Badge variant="outline" className="capitalize">{difficulty}</Badge>
           <Badge variant="outline">{interviewType}</Badge>
           {compatibility && compatibility.matchScore < 60 && (
-             <Badge variant="outline" className="border-yellow-500/50 text-yellow-600 bg-yellow-500/5">Partial Match</Badge>
+             <Badge variant="outline" className="border-yellow-500/50 text-yellow-600 bg-yellow-500/5">{compatibility.parsingError ? 'Manual Mode' : 'Partial Match'}</Badge>
           )}
         </div>
         <Button variant="destructive" size="sm" onClick={handleEndInterview}>
