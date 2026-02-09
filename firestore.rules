@@ -1,7 +1,6 @@
 /**
  * PathFinders AI Security Ruleset.
- * This ruleset enforces strict user-ownership for all entities.
- * Triggers a re-provisioning of backend services including Auth domains.
+ * Enforces strict user-ownership based on the authenticated user's UID.
  */
 rules_version = '2';
 service cloud.firestore {
@@ -16,35 +15,31 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == userId;
     }
 
-    function isExistingOwner(userId) {
-      return isOwner(userId) && resource != null;
-    }
-
     // User Profile Rules
     match /users/{userId} {
+      // Users can only read their own profile document.
       allow get: if isOwner(userId);
+      
+      // Explicitly deny listing the users collection for security.
       allow list: if false;
-      allow write: if isOwner(userId) && (request.resource.data.id == userId || request.resource.data.id == null);
-      allow delete: if isExistingOwner(userId);
+      
+      // Users can create, update, or delete their own profile document.
+      allow write: if isOwner(userId);
     }
 
     // Subcollection Rules
+    // Ensure all user-specific data (resumes, mentors, dashboards) is owned by the user.
+    
     match /users/{userId}/resumes/{resumeId} {
-      allow get, list: if isOwner(userId);
-      allow write: if isOwner(userId) && (request.resource.data.userId == userId || request.resource.data.userId == null);
-      allow delete: if isExistingOwner(userId);
+      allow read, write: if isOwner(userId);
     }
 
     match /users/{userId}/aiMentors/{aiMentorId} {
-      allow get, list: if isOwner(userId);
-      allow write: if isOwner(userId) && (request.resource.data.userId == userId || request.resource.data.userId == null);
-      allow delete: if isExistingOwner(userId);
+      allow read, write: if isOwner(userId);
     }
 
     match /users/{userId}/careerDashboards/{careerDashboardId} {
-      allow get, list: if isOwner(userId);
-      allow write: if isOwner(userId) && (request.resource.data.userId == userId || request.resource.data.userId == null);
-      allow delete: if isExistingOwner(userId);
+      allow read, write: if isOwner(userId);
     }
   }
 }
