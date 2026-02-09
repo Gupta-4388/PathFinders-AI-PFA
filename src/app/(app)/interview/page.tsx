@@ -24,6 +24,7 @@ import {
   AlertTriangle,
   Volume2,
   VolumeX,
+  FileSearch,
 } from 'lucide-react';
 import { useDropzone } from 'react-dropzone';
 import {
@@ -52,7 +53,6 @@ import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Progress } from '@/components/ui/progress';
 import { Switch } from '@/components/ui/switch';
 
@@ -84,6 +84,7 @@ export default function InterviewPage() {
   
   // Status state
   const [interviewStarted, setInterviewStarted] = useState(false);
+  const [isInterviewCompleted, setIsInterviewCompleted] = useState(false);
   const [isValidating, setIsValidating] = useState(false);
   const [loading, setLoading] = useState(false);
   const [compatibility, setCompatibility] = useState<ValidateRoleCompatibilityOutput | null>(null);
@@ -219,9 +220,6 @@ export default function InterviewPage() {
     try {
       const val = await validateRoleCompatibility({ jobRole, resumeDataUri });
       setCompatibility(val);
-      
-      // If low match AND not a parsing error, we block as per PRD logic but allow re-upload
-      // If parsing error, we allow proceed anyway with a warning
     } catch (e) {
       toast({ variant: 'destructive', title: 'Validation Error' });
     } finally {
@@ -231,16 +229,13 @@ export default function InterviewPage() {
 
   const proceedWithInterview = () => {
     setInterviewStarted(true);
+    setIsInterviewCompleted(false);
     setQuestionIndex(0);
+    setSessionHistory([]);
     fetchNextQuestion(true, compatibility?.missingSkills);
   };
 
   const fetchNextQuestion = async (isFirst = false, missingSkills?: string[]) => {
-    if (questionIndex >= TOTAL_QUESTIONS) {
-      handleEndInterview();
-      return;
-    }
-
     setLoading(true);
     try {
       const history = sessionHistory.map(h => ({ question: h.question, answer: h.answer }));
@@ -280,14 +275,14 @@ export default function InterviewPage() {
         score: feedback.score
       };
       setSessionHistory(prev => [...prev, newItem]);
-      toast({ title: `Question ${questionIndex} Submitted`, description: `Score: ${feedback.score}%` });
-      setCurrentQuestion('');
-      setUserAnswer('');
       
+      setUserAnswer('');
+      setCurrentQuestion('');
+
       if (questionIndex < TOTAL_QUESTIONS) {
         fetchNextQuestion(false, compatibility?.missingSkills);
       } else {
-        handleEndInterview();
+        setIsInterviewCompleted(true);
       }
     } catch (e) {
       toast({ variant: 'destructive', title: 'Submission failed' });
@@ -296,20 +291,29 @@ export default function InterviewPage() {
     }
   };
 
-  const handleEndInterview = async () => {
-    if (sessionHistory.length === 0) {
-      setInterviewStarted(false);
-      return;
-    }
+  const handleGenerateReport = async (retryCount = 0) => {
     setLoading(true);
     try {
-      const report = await generateFinalReport({ jobRole, resumeDataUri, history: sessionHistory });
+      const report = await generateFinalReport({ 
+        jobRole, 
+        resumeDataUri: compatibility?.parsingError ? undefined : resumeDataUri, 
+        history: sessionHistory 
+      });
       setFinalReport(report);
+      setIsInterviewCompleted(true);
     } catch (e) {
-      toast({ variant: 'destructive', title: 'Report generation failed' });
+      if (retryCount < 1) {
+        return handleGenerateReport(retryCount + 1);
+      }
+      toast({ variant: 'destructive', title: 'Report generation failed', description: 'We could not generate your report. Please try again.' });
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleEndEarly = () => {
+    setIsInterviewCompleted(true);
+    setCurrentQuestion('');
   };
 
   if (finalReport) {
@@ -323,6 +327,11 @@ export default function InterviewPage() {
                   <Trophy className="text-yellow-500" /> Interview Report
                 </CardTitle>
                 <CardDescription>Target Role: {jobRole}</CardDescription>
+                {sessionHistory.length < TOTAL_QUESTIONS && (
+                  <Badge variant="secondary" className="mt-2 bg-yellow-500/10 text-yellow-600 border-yellow-500/20">
+                    Partial Session ({sessionHistory.length} Answers)
+                  </Badge>
+                )}
               </div>
               <div className="text-right">
                 <p className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Overall Score</p>
@@ -483,18 +492,12 @@ export default function InterviewPage() {
                       Your resume aligns well with the requirements for a {jobRole}.
                     </AlertDescription>
                   </Alert>
-                ) : compatibility.matchScore >= 40 ? (
-                  <Alert className="border-yellow-500/50 bg-yellow-500/5">
-                    <AlertTriangle className="h-4 w-4 text-yellow-500" />
-                    <AlertTitle className="text-yellow-700">Partial Match ({compatibility.matchScore}%)</AlertTitle>
-                    <AlertDescription className="text-yellow-600/80">
-                      Your resume partially matches the selected role. You can still proceed with the mock interview to test your skills.
-                    </AlertDescription>
-                  </Alert>
                 ) : (
-                  <Alert variant="destructive" className="border-red-500/50 bg-red-500/5 text-red-700">
-                    <AlertCircle className="h-4 w-4" />
-                    <AlertTitle>Low Match ({compatibility.matchScore}%)</AlertTitle>
+                  <Alert variant={compatibility.matchScore >= 40 ? "default" : "destructive"} className={cn(
+                    compatibility.matchScore >= 40 ? "border-yellow-500/50 bg-yellow-500/5" : "border-red-500/50 bg-red-500/5 text-red-700"
+                  )}>
+                    {compatibility.matchScore >= 40 ? <AlertTriangle className="h-4 w-4 text-yellow-500" /> : <AlertCircle className="h-4 w-4" />}
+                    <AlertTitle>{compatibility.matchScore >= 40 ? `Partial Match (${compatibility.matchScore}%)` : `Low Match (${compatibility.matchScore}%)`}</AlertTitle>
                     <AlertDescription>
                       {compatibility.feedback}
                     </AlertDescription>
@@ -502,7 +505,7 @@ export default function InterviewPage() {
                 )}
                 
                 <div className="flex gap-3">
-                   <Button onClick={proceedWithInterview} className="flex-1 font-bold">
+                   <Button onClick={proceedWithInterview} className="flex-1 font-bold" disabled={compatibility.matchScore < 40 && !compatibility.parsingError}>
                      Proceed with Interview
                    </Button>
                   <Button variant="outline" onClick={() => setCompatibility(null)} className="flex-1 font-bold">Re-upload Resume</Button>
@@ -533,16 +536,18 @@ export default function InterviewPage() {
             <Badge variant="outline">{interviewType}</Badge>
           </div>
           <p className="text-xs text-muted-foreground font-bold uppercase tracking-wider">
-            Question {questionIndex} of {TOTAL_QUESTIONS}
+            {isInterviewCompleted ? "Interview Session Concluded" : `Question ${questionIndex} of ${TOTAL_QUESTIONS}`}
           </p>
         </div>
         <div className="flex items-center gap-4">
-           <div className="flex items-center gap-2">
-              {isNarrationEnabled ? <Volume2 className="w-4 h-4 text-primary" /> : <VolumeX className="w-4 h-4 text-muted-foreground" />}
-              <span className="text-xs font-bold mr-1">Voice Narration</span>
-              <Switch checked={isNarrationEnabled} onCheckedChange={setIsNarrationEnabled} />
-           </div>
-           <Button variant="destructive" size="sm" onClick={handleEndInterview}>
+           {!isInterviewCompleted && (
+             <div className="flex items-center gap-2">
+                {isNarrationEnabled ? <Volume2 className="w-4 h-4 text-primary" /> : <VolumeX className="w-4 h-4 text-muted-foreground" />}
+                <span className="text-xs font-bold mr-1">Voice Narration</span>
+                <Switch checked={isNarrationEnabled} onCheckedChange={setIsNarrationEnabled} />
+             </div>
+           )}
+           <Button variant="destructive" size="sm" onClick={handleEndEarly} disabled={isInterviewCompleted || loading}>
             <X className="mr-2 h-4 w-4" /> End Session
           </Button>
         </div>
@@ -552,62 +557,87 @@ export default function InterviewPage() {
         <Progress value={(questionIndex / TOTAL_QUESTIONS) * 100} className="h-2" />
       </div>
 
-      <Card className="border-primary/20 bg-primary/5">
-        <CardHeader>
-          <CardTitle className="text-lg font-bold">Interviewer Question</CardTitle>
-        </CardHeader>
-        <CardContent className="text-xl font-medium min-h-[100px] flex items-center">
-          {loading && !currentQuestion ? (
-            <div className="flex items-center gap-3"><Loader2 className="w-6 h-6 animate-spin" /><span>Preparing next question...</span></div>
-          ) : (
-            <p className="leading-relaxed">{currentQuestion}</p>
-          )}
-        </CardContent>
-      </Card>
+      {isInterviewCompleted ? (
+        <Card className="border-primary shadow-xl bg-primary/5 text-center py-12">
+          <CardHeader>
+            <div className="mx-auto w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-4">
+               <CheckCircle2 className="w-10 h-10 text-primary" />
+            </div>
+            <CardTitle className="text-2xl">Interview Completed</CardTitle>
+            <CardDescription>
+              Great job! You've finished your session for {jobRole}. 
+              Generate your detailed performance report now.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <Button className="w-full h-14 text-xl font-bold" onClick={() => handleGenerateReport()} disabled={loading}>
+              {loading ? <Loader2 className="animate-spin mr-2" /> : <><FileSearch className="mr-2" /> Generate Interview Report</>}
+            </Button>
+            <p className="text-sm text-muted-foreground">
+              Based on {sessionHistory.length} responses provided.
+            </p>
+          </CardContent>
+        </Card>
+      ) : (
+        <>
+          <Card className="border-primary/20 bg-primary/5">
+            <CardHeader>
+              <CardTitle className="text-lg font-bold">Interviewer Question</CardTitle>
+            </CardHeader>
+            <CardContent className="text-xl font-medium min-h-[100px] flex items-center">
+              {loading && !currentQuestion ? (
+                <div className="flex items-center gap-3"><Loader2 className="w-6 h-6 animate-spin" /><span>Preparing next question...</span></div>
+              ) : (
+                <p className="leading-relaxed">{currentQuestion}</p>
+              )}
+            </CardContent>
+          </Card>
 
-      <Card className="shadow-lg">
-        <CardHeader>
-          <CardTitle>Your Answer</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {interviewMode === 'video' && (
-            <div className="aspect-video bg-black rounded-lg relative overflow-hidden group mb-4">
-              <video ref={videoRef} className="w-full h-full object-cover" autoPlay playsInline muted />
-              {isRecording && (
-                <div className="absolute top-4 left-4 bg-red-600 text-white px-3 py-1 rounded-full text-xs font-bold animate-pulse flex items-center gap-2">
-                  <div className="w-2 h-2 rounded-full bg-white" /> REC {recordingDuration}s
+          <Card className="shadow-lg">
+            <CardHeader>
+              <CardTitle>Your Answer</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {interviewMode === 'video' && (
+                <div className="aspect-video bg-black rounded-lg relative overflow-hidden group mb-4">
+                  <video ref={videoRef} className="w-full h-full object-cover" autoPlay playsInline muted />
+                  {isRecording && (
+                    <div className="absolute top-4 left-4 bg-red-600 text-white px-3 py-1 rounded-full text-xs font-bold animate-pulse flex items-center gap-2">
+                      <div className="w-2 h-2 rounded-full bg-white" /> REC {recordingDuration}s
+                    </div>
+                  )}
                 </div>
               )}
-            </div>
-          )}
 
-          {interviewMode === 'audio' && (
-            <div className="h-32 bg-muted rounded-lg flex flex-col items-center justify-center gap-3 mb-4">
-              <Mic className={cn("w-12 h-12", isRecording ? "text-red-500 animate-pulse" : "text-muted-foreground")} />
-              <p className="text-sm font-bold">{isRecording ? `Recording... ${recordingDuration}s` : "Microphone Ready"}</p>
-            </div>
-          )}
+              {interviewMode === 'audio' && (
+                <div className="h-32 bg-muted rounded-lg flex flex-col items-center justify-center gap-3 mb-4">
+                  <Mic className={cn("w-12 h-12", isRecording ? "text-red-500 animate-pulse" : "text-muted-foreground")} />
+                  <p className="text-sm font-bold">{isRecording ? `Recording... ${recordingDuration}s` : "Microphone Ready"}</p>
+                </div>
+              )}
 
-          <Textarea 
-            placeholder={interviewMode === 'text' ? "Type your answer here..." : "Recording will be transcribed here..."}
-            className="min-h-[200px] text-lg resize-none"
-            value={userAnswer}
-            onChange={e => setUserAnswer(e.target.value)}
-            disabled={loading || isRecording}
-          />
+              <Textarea 
+                placeholder={interviewMode === 'text' ? "Type your answer here..." : "Recording will be transcribed here..."}
+                className="min-h-[200px] text-lg resize-none"
+                value={userAnswer}
+                onChange={e => setUserAnswer(e.target.value)}
+                disabled={loading || isRecording}
+              />
 
-          <div className="flex justify-between gap-4">
-            {interviewMode !== 'text' && (
-              <Button variant="outline" className="h-12 px-8 font-bold" onClick={toggleRecording} disabled={loading}>
-                {isRecording ? <><MicOff className="mr-2" /> Stop Recording</> : <><Mic className="mr-2" /> {userAnswer ? "Record Again" : "Start Speaking"}</>}
-              </Button>
-            )}
-            <Button className="h-12 flex-1 text-lg font-bold" onClick={submitAnswer} disabled={loading || !userAnswer.trim() || isRecording}>
-              {loading ? <Loader2 className="animate-spin" /> : <><Send className="mr-2" /> Submit Answer</>}
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+              <div className="flex justify-between gap-4">
+                {interviewMode !== 'text' && (
+                  <Button variant="outline" className="h-12 px-8 font-bold" onClick={toggleRecording} disabled={loading}>
+                    {isRecording ? <><MicOff className="mr-2" /> Stop Recording</> : <><Mic className="mr-2" /> {userAnswer ? "Record Again" : "Start Speaking"}</>}
+                  </Button>
+                )}
+                <Button className="h-12 flex-1 text-lg font-bold" onClick={submitAnswer} disabled={loading || !userAnswer.trim() || isRecording}>
+                  {loading ? <Loader2 className="animate-spin" /> : <><Send className="mr-2" /> Submit Answer</>}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </>
+      )}
     </div>
   );
 }

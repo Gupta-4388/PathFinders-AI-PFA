@@ -43,7 +43,7 @@ const reportPrompt = ai.definePrompt({
   name: 'generateFinalReportPrompt',
   input: { schema: GenerateFinalReportInputSchema },
   output: { schema: GenerateFinalReportOutputSchema },
-  prompt: `You are an expert interview evaluator. Review the following mock interview transcript for the role of "{{{jobRole}}}".
+  prompt: `You are an expert interview evaluator. Review the following mock interview session for the role of "{{{jobRole}}}".
 
 {{#if resumeDataUri}}
 Candidate Resume Context:
@@ -51,6 +51,7 @@ Candidate Resume Context:
 {{/if}}
 
 Interview History:
+{{#if history}}
 {{#each history}}
 Question: {{{this.question}}}
 Answer: {{{this.answer}}}
@@ -58,14 +59,18 @@ Individual Feedback: {{{this.analysis.content}}}
 Individual Score: {{{this.score}}}
 ---
 {{/each}}
+{{else}}
+Note: The candidate provided no responses for this session.
+{{/if}}
 
-Provide a comprehensive final evaluation:
-1. Calculate an overall performance score (0-100) based on all answers.
-2. Identify 3-5 core strengths.
-3. Identify 3-5 key weaknesses or areas for improvement.
-4. Highlight specific skill gaps relative to the "{{{jobRole}}}" requirements.
-5. Provide actionable suggestions for improvement.
-6. Give a final verdict on the candidate's readiness for a real-world interview for this role.`,
+INSTRUCTIONS:
+1. If the interview ended early (fewer than 15 questions), provide insights based on the available responses but explicitly mention the limited sample size in your readiness verdict.
+2. Calculate an overall performance score (0-100). If no answers were provided, the score should be 0.
+3. Identify 3-5 core strengths based on their responses.
+4. Identify 3-5 key weaknesses or areas for improvement.
+5. Highlight specific technical or soft skill gaps relative to the "{{{jobRole}}}" requirements.
+6. Provide actionable suggestions for future success.
+7. Give a professional final verdict on their current readiness.`,
 });
 
 const generateFinalReportFlow = ai.defineFlow(
