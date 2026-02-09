@@ -76,16 +76,20 @@ function buildAuthObject(currentUser: User | null): FirebaseAuthObject | null {
  */
 function buildRequestObject(context: SecurityRuleContext): SecurityRuleRequest {
   let authObject: FirebaseAuthObject | null = null;
-  try {
-    // Safely attempt to get the current user.
-    const firebaseAuth = getAuth();
-    const currentUser = firebaseAuth.currentUser;
-    if (currentUser) {
-      authObject = buildAuthObject(currentUser);
+  
+  // Guard against SSR environments or pre-initialization calls
+  if (typeof window !== 'undefined') {
+    try {
+      // Safely attempt to get the current user.
+      const firebaseAuth = getAuth();
+      const currentUser = firebaseAuth.currentUser;
+      if (currentUser) {
+        authObject = buildAuthObject(currentUser);
+      }
+    } catch {
+      // This will catch errors if the Firebase app is not yet initialized.
+      // In this case, we'll proceed without auth information.
     }
-  } catch {
-    // This will catch errors if the Firebase app is not yet initialized.
-    // In this case, we'll proceed without auth information.
   }
 
   return {

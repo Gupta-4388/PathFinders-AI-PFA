@@ -60,8 +60,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import { validateRoleCompatibility, ValidateRoleCompatibilityOutput } from '@/ai/flows/validate-role-compatibility-flow';
 
 const SpeechRecognition =
-  (typeof window !== 'undefined' && window.SpeechRecognition) ||
-  (typeof window !== 'undefined' && window.webkitSpeechRecognition);
+  (typeof window !== 'undefined' && (window.SpeechRecognition || (window as any).webkitSpeechRecognition));
 
 type InterviewMode = 'video' | 'audio' | 'text';
 type Difficulty = 'Beginner' | 'Intermediate' | 'Advanced';
@@ -154,6 +153,8 @@ export default function InterviewPage() {
   useEffect(() => {
     if (interviewStarted && (interviewMode === 'video' || interviewMode === 'audio')) {
       const getMediaPermission = async () => {
+        if (typeof navigator === 'undefined' || !navigator.mediaDevices) return;
+        
         try {
           const stream = await navigator.mediaDevices.getUserMedia({
             video: interviewMode === 'video',
@@ -163,7 +164,7 @@ export default function InterviewPage() {
           if (interviewMode === 'video' && videoRef.current) {
             setHasCameraPermission(true);
             videoRef.current.srcObject = stream;
-            videoRef.current.play();
+            videoRef.current.play().catch(console.error);
           }
         } catch (error) {
           toast({ variant: 'destructive', title: 'Media Access Denied', description: 'Please enable camera and microphone permissions in your browser settings.' });
@@ -188,14 +189,14 @@ export default function InterviewPage() {
       recordedChunksRef.current = [];
 
       try {
-        if (streamRef.current) {
+        if (streamRef.current && typeof window !== 'undefined' && 'MediaRecorder' in window) {
           mediaRecorderRef.current = new MediaRecorder(streamRef.current);
           mediaRecorderRef.current.ondataavailable = (e) => e.data.size > 0 && recordedChunksRef.current.push(e.data);
           mediaRecorderRef.current.start();
         }
 
         if (SpeechRecognition) {
-          recognitionRef.current = new SpeechRecognition();
+          recognitionRef.current = new (SpeechRecognition as any)();
           recognitionRef.current.continuous = true;
           recognitionRef.current.interimResults = true;
           recognitionRef.current.onresult = (e: any) => {
@@ -244,7 +245,7 @@ export default function InterviewPage() {
         jobRole,
         difficulty,
         interviewType,
-        resumeDataUri: compatibility?.parsingError ? undefined : resumeDataUri,
+        resumeDataUri: (compatibility?.parsingError) ? undefined : resumeDataUri,
         missingSkills,
         history: sessionHistory
       });
@@ -300,14 +301,13 @@ export default function InterviewPage() {
     setIsFinalizing(true);
     setLoading(true);
     try {
-      // Freeze and finalize history
       const finalizedHistory = [...sessionHistory];
       
       const report = await generateFinalReport({ 
         jobRole, 
         difficulty,
         interviewMode,
-        resumeDataUri: compatibility?.parsingError ? undefined : resumeDataUri, 
+        resumeDataUri: (compatibility?.parsingError) ? undefined : resumeDataUri, 
         history: finalizedHistory 
       });
       setFinalReport(report);
@@ -353,139 +353,131 @@ export default function InterviewPage() {
                 <div className="flex gap-2 mt-2">
                   <Badge variant="outline">{difficulty}</Badge>
                   <Badge variant="outline" className="capitalize">{interviewMode} Mode</Badge>
-                  <Badge variant={finalReport.summary.status === 'Completed' ? "default" : "secondary"}>
-                    {finalReport.summary.status} ({finalReport.summary.questionsAnswered} / {TOTAL_QUESTIONS})
+                  <Badge variant={finalReport.summary?.status === 'Completed' ? "default" : "secondary"}>
+                    {finalReport.summary?.status || 'Ended early'} ({finalReport.summary?.questionsAnswered || sessionHistory.length} / {TOTAL_QUESTIONS})
                   </Badge>
                 </div>
               </div>
               <div className="bg-background rounded-xl p-4 border shadow-sm flex flex-col items-center min-w-[140px]">
                 <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-1">Overall Readiness</p>
-                <p className="text-4xl font-black text-primary">{finalReport.overallScore}%</p>
+                <p className="text-4xl font-black text-primary">{finalReport.overallScore || 0}%</p>
               </div>
             </div>
           </CardHeader>
           <CardContent className="pt-8 space-y-10">
-            {/* Summary Alerts */}
-            <Alert className="bg-primary/5 border-primary/20">
-              <Zap className="w-5 h-5 text-primary" />
-              <AlertTitle className="font-bold">Expert Readiness Verdict</AlertTitle>
-              <AlertDescription className="text-sm italic">&quot;{finalReport.readinessVerdict}&quot;</AlertDescription>
-            </Alert>
+            {finalReport.readinessVerdict && (
+              <Alert className="bg-primary/5 border-primary/20">
+                <Zap className="w-5 h-5 text-primary" />
+                <AlertTitle className="font-bold">Expert Readiness Verdict</AlertTitle>
+                <AlertDescription className="text-sm italic">&quot;{finalReport.readinessVerdict}&quot;</AlertDescription>
+              </Alert>
+            )}
 
-            {/* Q&A Review */}
-            <div className="space-y-4">
-              <h3 className="font-bold text-lg flex items-center gap-2"><MessageSquare className="w-5 h-5 text-primary" /> Question-by-Question Review</h3>
-              <Accordion type="single" collapsible className="w-full border rounded-lg overflow-hidden">
-                {finalReport.questionReviews.map((review, i) => (
-                  <AccordionItem key={i} value={`q-${i}`} className="border-b last:border-0 px-4">
-                    <AccordionTrigger className="hover:no-underline">
-                      <div className="flex text-left gap-3">
-                        <span className="text-muted-foreground font-bold">{i + 1}.</span>
-                        <span className="font-medium line-clamp-1">{review.question}</span>
-                      </div>
-                    </AccordionTrigger>
-                    <AccordionContent className="space-y-4 pt-2">
-                      <div className="bg-muted p-3 rounded-md">
-                        <p className="text-xs font-bold text-muted-foreground uppercase mb-1 flex items-center gap-1"><User className="w-3 h-3"/> Your Answer</p>
-                        <p className="text-sm italic">{review.answer}</p>
-                      </div>
-                      <div className="bg-primary/5 p-3 rounded-md border border-primary/10">
-                        <p className="text-xs font-bold text-primary uppercase mb-1 flex items-center gap-1"><Zap className="w-3 h-3"/> AI Analysis</p>
-                        <p className="text-sm">{review.feedback}</p>
-                      </div>
-                    </AccordionContent>
-                  </AccordionItem>
-                ))}
-              </Accordion>
-            </div>
+            {finalReport.questionReviews && finalReport.questionReviews.length > 0 && (
+              <div className="space-y-4">
+                <h3 className="font-bold text-lg flex items-center gap-2"><MessageSquare className="w-5 h-5 text-primary" /> Question-by-Question Review</h3>
+                <Accordion type="single" collapsible className="w-full border rounded-lg overflow-hidden">
+                  {finalReport.questionReviews.map((review, i) => (
+                    <AccordionItem key={i} value={`q-${i}`} className="border-b last:border-0 px-4">
+                      <AccordionTrigger className="hover:no-underline">
+                        <div className="flex text-left gap-3">
+                          <span className="text-muted-foreground font-bold">{i + 1}.</span>
+                          <span className="font-medium line-clamp-1">{review.question}</span>
+                        </div>
+                      </AccordionTrigger>
+                      <AccordionContent className="space-y-4 pt-2">
+                        <div className="bg-muted p-3 rounded-md">
+                          <p className="text-xs font-bold text-muted-foreground uppercase mb-1 flex items-center gap-1"><User className="w-3 h-3"/> Your Answer</p>
+                          <p className="text-sm italic">{review.answer}</p>
+                        </div>
+                        <div className="bg-primary/5 p-3 rounded-md border border-primary/10">
+                          <p className="text-xs font-bold text-primary uppercase mb-1 flex items-center gap-1"><Zap className="w-3 h-3"/> AI Analysis</p>
+                          <p className="text-sm">{review.feedback}</p>
+                        </div>
+                      </AccordionContent>
+                    </AccordionItem>
+                  ))}
+                </Accordion>
+              </div>
+            )}
 
-            {/* Signals */}
             <div className="grid md:grid-cols-2 gap-8">
+              {finalReport.strengths && finalReport.strengths.length > 0 && (
+                <div className="space-y-4">
+                  <h3 className="font-bold text-lg flex items-center gap-2"><Target className="w-5 h-5 text-green-500" /> Core Strengths</h3>
+                  <ul className="space-y-2">
+                    {finalReport.strengths.map((s, i) => (
+                      <li key={i} className="flex items-start gap-2 text-sm bg-muted/50 p-3 rounded-lg border border-transparent hover:border-green-500/20 transition-colors">
+                        <CheckCircle2 className="w-4 h-4 text-green-500 mt-0.5 shrink-0" />
+                        {s}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              {finalReport.weaknesses && finalReport.weaknesses.length > 0 && (
+                <div className="space-y-4">
+                  <h3 className="font-bold text-lg flex items-center gap-2"><AlertCircle className="w-5 h-5 text-red-500" /> Growth Areas</h3>
+                  <ul className="space-y-2">
+                    {finalReport.weaknesses.map((w, i) => (
+                      <li key={i} className="flex items-start gap-2 text-sm bg-muted/50 p-3 rounded-lg border border-transparent hover:border-red-500/20 transition-colors">
+                        <AlertTriangle className="w-4 h-4 text-red-500 mt-0.5 shrink-0" />
+                        {w}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+
+            {finalReport.skillGaps && finalReport.skillGaps.length > 0 && (
               <div className="space-y-4">
-                <h3 className="font-bold text-lg flex items-center gap-2"><Target className="w-5 h-5 text-green-500" /> Core Strengths</h3>
-                <ul className="space-y-2">
-                  {finalReport.strengths.map((s, i) => (
-                    <li key={i} className="flex items-start gap-2 text-sm bg-muted/50 p-3 rounded-lg border border-transparent hover:border-green-500/20 transition-colors">
-                      <CheckCircle2 className="w-4 h-4 text-green-500 mt-0.5 shrink-0" />
-                      {s}
-                    </li>
+                <h3 className="font-bold text-lg flex items-center gap-2"><BarChart className="w-5 h-5 text-blue-500" /> Role-Specific Skill Gaps</h3>
+                <div className="flex flex-wrap gap-2">
+                  {finalReport.skillGaps.map((gap, i) => (
+                    <Badge key={i} variant="outline" className="text-sm py-1 px-3 border-blue-500/30 bg-blue-500/5">{gap}</Badge>
                   ))}
-                </ul>
+                </div>
               </div>
+            )}
+
+            {finalReport.overallFeedback && (
               <div className="space-y-4">
-                <h3 className="font-bold text-lg flex items-center gap-2"><AlertCircle className="w-5 h-5 text-red-500" /> Growth Areas</h3>
-                <ul className="space-y-2">
-                  {finalReport.weaknesses.map((w, i) => (
-                    <li key={i} className="flex items-start gap-2 text-sm bg-muted/50 p-3 rounded-lg border border-transparent hover:border-red-500/20 transition-colors">
-                      <AlertTriangle className="w-4 h-4 text-red-500 mt-0.5 shrink-0" />
-                      {w}
-                    </li>
+                <h3 className="font-bold text-lg flex items-center gap-2"><Activity className="w-5 h-5 text-orange-500" /> Performance Breakdown</h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {['communicationClarity', 'technicalDepth', 'problemSolving', 'confidence'].map((key) => (
+                    <Card key={key} className="bg-muted/30 border-0 shadow-none">
+                      <CardContent className="p-4">
+                        <p className="text-xs font-bold text-muted-foreground uppercase mb-1">{key.replace(/([A-Z])/g, ' $1')}</p>
+                        <p className="text-sm">{(finalReport.overallFeedback as any)[key]}</p>
+                      </CardContent>
+                    </Card>
                   ))}
-                </ul>
+                </div>
               </div>
-            </div>
+            )}
 
-            {/* Skill Gaps */}
-            <div className="space-y-4">
-              <h3 className="font-bold text-lg flex items-center gap-2"><BarChart className="w-5 h-5 text-blue-500" /> Role-Specific Skill Gaps</h3>
-              <div className="flex flex-wrap gap-2">
-                {finalReport.skillGaps.map((gap, i) => (
-                  <Badge key={i} variant="outline" className="text-sm py-1 px-3 border-blue-500/30 bg-blue-500/5">{gap}</Badge>
-                ))}
-              </div>
-            </div>
-
-            {/* Overall Feedback */}
-            <div className="space-y-4">
-              <h3 className="font-bold text-lg flex items-center gap-2"><Activity className="w-5 h-5 text-orange-500" /> Performance Breakdown</h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <Card className="bg-muted/30 border-0 shadow-none">
-                  <CardContent className="p-4">
-                    <p className="text-xs font-bold text-muted-foreground uppercase mb-1">Communication</p>
-                    <p className="text-sm">{finalReport.overallFeedback.communicationClarity}</p>
-                  </CardContent>
-                </Card>
-                <Card className="bg-muted/30 border-0 shadow-none">
-                  <CardContent className="p-4">
-                    <p className="text-xs font-bold text-muted-foreground uppercase mb-1">Technical Depth</p>
-                    <p className="text-sm">{finalReport.overallFeedback.technicalDepth}</p>
-                  </CardContent>
-                </Card>
-                <Card className="bg-muted/30 border-0 shadow-none">
-                  <CardContent className="p-4">
-                    <p className="text-xs font-bold text-muted-foreground uppercase mb-1">Problem Solving</p>
-                    <p className="text-sm">{finalReport.overallFeedback.problemSolving}</p>
-                  </CardContent>
-                </Card>
-                <Card className="bg-muted/30 border-0 shadow-none">
-                  <CardContent className="p-4">
-                    <p className="text-xs font-bold text-muted-foreground uppercase mb-1">Confidence</p>
-                    <p className="text-sm">{finalReport.overallFeedback.confidence}</p>
-                  </CardContent>
-                </Card>
-              </div>
-            </div>
-
-            {/* Next Steps */}
-            <div className="space-y-4">
-              <h3 className="font-bold text-lg flex items-center gap-2"><Lightbulb className="w-5 h-5 text-yellow-500" /> Actionable Next Steps</h3>
-              <div className="grid gap-3">
-                {finalReport.improvementSuggestions.map((step, i) => (
-                  <div key={i} className="flex items-center gap-3 p-3 rounded-lg border bg-background group hover:border-primary/50 transition-colors">
-                    <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
-                      {i + 1}
+            {finalReport.improvementSuggestions && finalReport.improvementSuggestions.length > 0 && (
+              <div className="space-y-4">
+                <h3 className="font-bold text-lg flex items-center gap-2"><Lightbulb className="w-5 h-5 text-yellow-500" /> Actionable Next Steps</h3>
+                <div className="grid gap-3">
+                  {finalReport.improvementSuggestions.map((step, i) => (
+                    <div key={i} className="flex items-center gap-3 p-3 rounded-lg border bg-background group hover:border-primary/50 transition-colors">
+                      <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
+                        {i + 1}
+                      </div>
+                      <p className="text-sm">{step}</p>
                     </div>
-                    <p className="text-sm">{step}</p>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
 
             <div className="pt-8 border-t flex flex-col sm:flex-row gap-4">
-              <Button onClick={() => window.location.reload()} className="flex-1 h-12 text-lg font-bold" variant="outline">
+              <Button onClick={() => typeof window !== 'undefined' && window.location.reload()} className="flex-1 h-12 text-lg font-bold" variant="outline">
                 New Session <RefreshCcw className="ml-2 w-5 h-5" />
               </Button>
-              <Button onClick={() => window.print()} className="flex-1 h-12 text-lg font-bold">
+              <Button onClick={() => typeof window !== 'undefined' && window.print()} className="flex-1 h-12 text-lg font-bold">
                 Download PDF <FileSearch className="ml-2 w-5 h-5" />
               </Button>
             </div>

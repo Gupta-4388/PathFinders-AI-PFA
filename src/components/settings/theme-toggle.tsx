@@ -1,4 +1,3 @@
-
 'use client';
 
 import * as React from 'react';
@@ -10,11 +9,16 @@ export function ThemeToggle() {
   const { toast } = useToast();
 
   const toggleTheme = () => {
+    if (typeof document === 'undefined') return;
+    
     // Determine the new theme based on the current one
-    const newTheme = document.documentElement.classList.contains('dark') ? 'light' : 'dark';
+    const isDark = document.documentElement.classList.contains('dark');
+    const newTheme = isDark ? 'light' : 'dark';
 
     // Persist the new theme
-    localStorage.setItem('theme', newTheme);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('theme', newTheme);
+    }
     
     // Apply the new theme
     document.documentElement.classList.remove('light', 'dark');

@@ -1,4 +1,3 @@
-
 'use client';
 
 import * as React from 'react';
@@ -99,9 +98,13 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   }, [user, isUserLoading, router]);
 
   const handleSignOut = () => {
+    if (!auth) return;
+    
     signOut(auth)
       .then(() => {
-        localStorage.clear();
+        if (typeof window !== 'undefined') {
+          localStorage.clear();
+        }
         toast({
           title: 'Signed Out',
           description: 'You have been successfully signed out.',

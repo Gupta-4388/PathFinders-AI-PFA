@@ -54,25 +54,37 @@ export default function DashboardPage() {
     const fetchRecommendations = async () => {
       setLoading(true);
       
-      const existingData = localStorage.getItem('recommendedCareerPaths');
-      if (existingData) {
-        setRecommendedPaths(JSON.parse(existingData));
-        setLoading(false);
-        return;
+      if (typeof window !== 'undefined') {
+        const existingData = localStorage.getItem('recommendedCareerPaths');
+        if (existingData) {
+          try {
+            const parsed = JSON.parse(existingData);
+            if (parsed && typeof parsed === 'object') {
+              setRecommendedPaths(parsed);
+              setLoading(false);
+              return;
+            }
+          } catch (e) {
+            localStorage.removeItem('recommendedCareerPaths');
+          }
+        }
       }
       
       if (userProfile && userProfile.resumeDataUri) {
         try {
           const analysisResult = await analyzeResume({ resumeDataUri: userProfile.resumeDataUri });
 
-          if (analysisResult.isResume && analysisResult.extractedSkills.length > 0) {
+          if (analysisResult?.isResume && analysisResult?.extractedSkills && analysisResult.extractedSkills.length > 0) {
             const careerPathResult = await recommendCareerPaths({
               skills: analysisResult.extractedSkills,
             });
-            localStorage.setItem(
-              'recommendedCareerPaths',
-              JSON.stringify(careerPathResult)
-            );
+            
+            if (typeof window !== 'undefined') {
+              localStorage.setItem(
+                'recommendedCareerPaths',
+                JSON.stringify(careerPathResult)
+              );
+            }
             setRecommendedPaths(careerPathResult);
           }
         } catch (error) {
@@ -173,7 +185,7 @@ export default function DashboardPage() {
             <div className="flex items-center justify-center py-8">
               <Loader2 className="w-8 h-8 animate-spin text-primary" />
             </div>
-          ) : recommendedPaths && recommendedPaths.careerPaths.length > 0 ? (
+          ) : recommendedPaths && recommendedPaths.careerPaths && recommendedPaths.careerPaths.length > 0 ? (
             <div className="grid gap-6">
               {recommendedPaths.careerPaths.map((path, index) => (
                 <div key={index} className="p-6 border rounded-lg space-y-4 animate-fade-in-up transition-transform transform hover:scale-[1.02]" style={{animationDelay: `${index * 150}ms`}}>
@@ -203,12 +215,14 @@ export default function DashboardPage() {
                     </div>
                   </div>
 
-                  <div>
-                    <h4 className="font-semibold mb-2">Key Skills:</h4>
-                    <div className="flex flex-wrap gap-2">
-                      {path.skills.map(skill => <Badge key={skill} variant="outline">{skill}</Badge>)}
+                  {path.skills && path.skills.length > 0 && (
+                    <div>
+                      <h4 className="font-semibold mb-2">Key Skills:</h4>
+                      <div className="flex flex-wrap gap-2">
+                        {path.skills.map(skill => <Badge key={skill} variant="outline">{skill}</Badge>)}
+                      </div>
                     </div>
-                  </div>
+                  )}
 
                   <div className="space-y-2">
                     <div className="flex justify-between items-center text-sm">
