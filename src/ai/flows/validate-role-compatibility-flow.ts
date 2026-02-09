@@ -10,7 +10,7 @@ import { z } from 'genkit';
 
 const ValidateRoleCompatibilityInputSchema = z.object({
   jobRole: z.string().describe('The job role the user is targeting.'),
-  resumeText: z.string().describe('The text extracted from the user\'s resume.'),
+  resumeText: z.string().describe("The text extracted from the user's resume."),
 });
 export type ValidateRoleCompatibilityInput = z.infer<typeof ValidateRoleCompatibilityInputSchema>;
 
@@ -19,7 +19,7 @@ const ValidateRoleCompatibilityOutputSchema = z.object({
   matchScore: z.number().describe('A score from 0-100 indicating the skill match.'),
   missingSkills: z.array(z.string()).describe('Critical skills for the role that are missing from the resume.'),
   foundationalSkills: z.array(z.string()).describe('Skills found in the resume that match the role.'),
-  feedback: z.string().describe('Advice on why the resume is or isn't compatible.'),
+  feedback: z.string().describe("Advice on why the resume is or isn't compatible."),
 });
 export type ValidateRoleCompatibilityOutput = z.infer<typeof ValidateRoleCompatibilityOutputSchema>;
 
