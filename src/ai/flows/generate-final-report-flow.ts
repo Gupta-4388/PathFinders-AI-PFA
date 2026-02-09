@@ -1,4 +1,3 @@
-
 'use server';
 
 /**
@@ -64,13 +63,13 @@ Note: The candidate provided no responses for this session.
 {{/if}}
 
 INSTRUCTIONS:
-1. If the interview ended early (fewer than 15 questions), provide insights based on the available responses but explicitly mention the limited sample size in your readiness verdict.
+1. If the interview ended early (fewer than 15 questions), provide insights based on the available responses but explicitly mention the limited sample size in your readiness verdict. 
 2. Calculate an overall performance score (0-100). If no answers were provided, the score should be 0.
 3. Identify 3-5 core strengths based on their responses.
 4. Identify 3-5 key weaknesses or areas for improvement.
 5. Highlight specific technical or soft skill gaps relative to the "{{{jobRole}}}" requirements.
 6. Provide actionable suggestions for future success.
-7. Give a professional final verdict on their current readiness.`,
+7. Give a professional final verdict on their current readiness. If the session was partial, note that the verdict is based on a limited set of data.`,
 });
 
 const generateFinalReportFlow = ai.defineFlow(

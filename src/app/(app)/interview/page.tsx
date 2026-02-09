@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
@@ -164,7 +163,7 @@ export default function InterviewPage() {
             videoRef.current.play();
           }
         } catch (error) {
-          toast({ variant: 'destructive', title: 'Media Access Denied', description: 'Enable camera/mic permissions.' });
+          toast({ variant: 'destructive', title: 'Media Access Denied', description: 'Please enable camera and microphone permissions in your browser settings.' });
         }
       };
       getMediaPermission();
@@ -205,7 +204,7 @@ export default function InterviewPage() {
         }
         setIsRecording(true);
       } catch (e) {
-        toast({ variant: "destructive", title: "Recording Failed" });
+        toast({ variant: "destructive", title: "Recording Failed", description: "Could not start audio/video recording." });
       }
     }
   };
@@ -221,7 +220,7 @@ export default function InterviewPage() {
       const val = await validateRoleCompatibility({ jobRole, resumeDataUri });
       setCompatibility(val);
     } catch (e) {
-      toast({ variant: 'destructive', title: 'Validation Error' });
+      toast({ variant: 'destructive', title: 'Validation Error', description: 'Could not validate your resume. Please try again.' });
     } finally {
       setIsValidating(false);
     }
@@ -257,20 +256,28 @@ export default function InterviewPage() {
         setQuestionAudio(null);
       }
     } catch (e) {
-      toast({ variant: 'destructive', title: 'Failed to generate question' });
+      toast({ variant: 'destructive', title: 'Failed to generate question', description: 'AI was unable to generate the next question.' });
     } finally {
       setLoading(false);
     }
   };
 
   const submitAnswer = async () => {
-    if (!userAnswer.trim()) return;
+    let finalAnswer = userAnswer.trim();
+    if (!finalAnswer) {
+      if (interviewMode === 'text') {
+        toast({ title: "Answer Required", description: "Please provide an answer before submitting." });
+        return;
+      }
+      finalAnswer = `[${interviewMode === 'audio' ? 'Audio' : 'Video'} response recorded - transcription unavailable]`;
+    }
+
     setLoading(true);
     try {
-      const feedback = await analyzeInterviewAnswer({ question: currentQuestion, answer: userAnswer });
+      const feedback = await analyzeInterviewAnswer({ question: currentQuestion, answer: finalAnswer });
       const newItem: InterviewSessionItem = {
         question: currentQuestion,
-        answer: userAnswer,
+        answer: finalAnswer,
         analysis: feedback,
         score: feedback.score
       };
@@ -285,7 +292,7 @@ export default function InterviewPage() {
         setIsInterviewCompleted(true);
       }
     } catch (e) {
-      toast({ variant: 'destructive', title: 'Submission failed' });
+      toast({ variant: 'destructive', title: 'Submission failed', description: 'Could not process your answer. Please try again.' });
     } finally {
       setLoading(false);
     }
@@ -305,7 +312,11 @@ export default function InterviewPage() {
       if (retryCount < 1) {
         return handleGenerateReport(retryCount + 1);
       }
-      toast({ variant: 'destructive', title: 'Report generation failed', description: 'We could not generate your report. Please try again.' });
+      toast({ 
+        variant: 'destructive', 
+        title: 'Report generation failed', 
+        description: 'We encountered a hiccup. Please try again in a moment.' 
+      });
     } finally {
       setLoading(false);
     }
@@ -314,6 +325,11 @@ export default function InterviewPage() {
   const handleEndEarly = () => {
     setIsInterviewCompleted(true);
     setCurrentQuestion('');
+    if (isRecording) {
+      recognitionRef.current?.stop();
+      mediaRecorderRef.current?.stop();
+      setIsRecording(false);
+    }
   };
 
   if (finalReport) {
@@ -326,7 +342,7 @@ export default function InterviewPage() {
                 <CardTitle className="text-2xl font-bold flex items-center gap-2">
                   <Trophy className="text-yellow-500" /> Interview Report
                 </CardTitle>
-                <CardDescription>Target Role: {jobRole}</CardDescription>
+                <CardDescription>Target Role: {jobRole} | {difficulty} {interviewType}</CardDescription>
                 {sessionHistory.length < TOTAL_QUESTIONS && (
                   <Badge variant="secondary" className="mt-2 bg-yellow-500/10 text-yellow-600 border-yellow-500/20">
                     Partial Session ({sessionHistory.length} Answers)
@@ -630,7 +646,7 @@ export default function InterviewPage() {
                     {isRecording ? <><MicOff className="mr-2" /> Stop Recording</> : <><Mic className="mr-2" /> {userAnswer ? "Record Again" : "Start Speaking"}</>}
                   </Button>
                 )}
-                <Button className="h-12 flex-1 text-lg font-bold" onClick={submitAnswer} disabled={loading || !userAnswer.trim() || isRecording}>
+                <Button className="h-12 flex-1 text-lg font-bold" onClick={submitAnswer} disabled={loading || isRecording}>
                   {loading ? <Loader2 className="animate-spin" /> : <><Send className="mr-2" /> Submit Answer</>}
                 </Button>
               </div>
