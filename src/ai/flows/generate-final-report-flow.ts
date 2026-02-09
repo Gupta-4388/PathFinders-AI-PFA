@@ -9,25 +9,37 @@ import { z } from 'genkit';
 
 const GenerateFinalReportInputSchema = z.object({
   jobRole: z.string(),
+  difficulty: z.string(),
+  interviewMode: z.string(),
   resumeDataUri: z.string().optional(),
   history: z.array(z.object({
     question: z.string(),
     answer: z.string(),
-    analysis: z.object({
-      clarity: z.string(),
-      content: z.string()
-    }),
-    score: z.number()
   }))
 });
 export type GenerateFinalReportInput = z.infer<typeof GenerateFinalReportInputSchema>;
 
 const GenerateFinalReportOutputSchema = z.object({
   overallScore: z.number().describe('A score from 0-100 representing overall performance.'),
+  summary: z.object({
+     questionsAnswered: z.number(),
+     status: z.enum(['Completed', 'Ended early']),
+  }),
+  questionReviews: z.array(z.object({
+    question: z.string(),
+    answer: z.string(),
+    feedback: z.string().describe("Brief strengths and improvement suggestions for this specific answer.")
+  })),
   strengths: z.array(z.string()).describe('Key strengths identified during the interview.'),
   weaknesses: z.array(z.string()).describe('Areas where the candidate needs improvement.'),
   skillGaps: z.array(z.string()).describe('Specific technical or soft skills lacking for the job role.'),
-  improvementSuggestions: z.string().describe('Concrete advice for future interviews.'),
+  overallFeedback: z.object({
+    communicationClarity: z.string(),
+    technicalDepth: z.string(),
+    problemSolving: z.string(),
+    confidence: z.string().describe("Qualitative assessment of confidence."),
+  }),
+  improvementSuggestions: z.array(z.string()).describe('3-5 Actionable next steps.'),
   readinessVerdict: z.string().describe('A brief concluding statement on the candidate\'s readiness for the role.')
 });
 export type GenerateFinalReportOutput = z.infer<typeof GenerateFinalReportOutputSchema>;
@@ -44,9 +56,13 @@ const reportPrompt = ai.definePrompt({
   output: { schema: GenerateFinalReportOutputSchema },
   prompt: `You are an expert interview evaluator. Review the following mock interview session for the role of "{{{jobRole}}}".
 
+CONTEXT:
+- Job Role: {{{jobRole}}}
+- Difficulty: {{{difficulty}}}
+- Interview Mode: {{{interviewMode}}}
+
 {{#if resumeDataUri}}
-Candidate Resume Context:
-{{media url=resumeDataUri}}
+Candidate Resume Context provided.
 {{/if}}
 
 Interview History:
@@ -54,8 +70,6 @@ Interview History:
 {{#each history}}
 Question: {{{this.question}}}
 Answer: {{{this.answer}}}
-Individual Feedback: {{{this.analysis.content}}}
-Individual Score: {{{this.score}}}
 ---
 {{/each}}
 {{else}}
@@ -63,13 +77,15 @@ Note: The candidate provided no responses for this session.
 {{/if}}
 
 INSTRUCTIONS:
-1. If the interview ended early (fewer than 15 questions), provide insights based on the available responses but explicitly mention the limited sample size in your readiness verdict. 
-2. Calculate an overall performance score (0-100). If no answers were provided, the score should be 0.
-3. Identify 3-5 core strengths based on their responses.
-4. Identify 3-5 key weaknesses or areas for improvement.
-5. Highlight specific technical or soft skill gaps relative to the "{{{jobRole}}}" requirements.
-6. Provide actionable suggestions for future success.
-7. Give a professional final verdict on their current readiness. If the session was partial, note that the verdict is based on a limited set of data.`,
+1. Provide a comprehensive evaluation. 
+2. If the interview ended early (fewer than 15 questions), provide insights based on the available responses.
+3. Calculate an overall performance score (0-100). If no answers were provided, the score should be 0.
+4. For each question in the history, provide a brief feedback string summarizing strengths and improvements.
+5. Identify core strengths and weaknesses.
+6. Highlight technical/soft skill gaps for the role.
+7. Provide an assessment of communication clarity, technical depth, problem-solving, and confidence.
+8. Suggest 3-5 actionable next steps.
+9. Give a final readiness verdict. Mention if the session was partial.`,
 });
 
 const generateFinalReportFlow = ai.defineFlow(

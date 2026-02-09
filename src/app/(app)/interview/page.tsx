@@ -24,17 +24,19 @@ import {
   Volume2,
   VolumeX,
   FileSearch,
+  MessageSquare,
+  Activity,
+  User,
+  Zap,
 } from 'lucide-react';
 import { useDropzone } from 'react-dropzone';
 import {
   mockInterviewWithRealtimeFeedback,
 } from '@/ai/flows/mock-interview-flow';
 import {
-  analyzeInterviewAnswer,
-  AnalyzeInterviewAnswerOutput,
-} from '@/ai/flows/analyze-interview-answer-flow';
-import { validateRoleCompatibility, ValidateRoleCompatibilityOutput } from '@/ai/flows/validate-role-compatibility-flow';
-import { generateFinalReport, GenerateFinalReportOutput } from '@/ai/flows/generate-final-report-flow';
+  generateFinalReport,
+  GenerateFinalReportOutput,
+} from '@/ai/flows/generate-final-report-flow';
 import { textToSpeech } from '@/ai/flows/text-to-speech-flow';
 import { Button } from '@/components/ui/button';
 import {
@@ -54,6 +56,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { cn } from '@/lib/utils';
 import { Progress } from '@/components/ui/progress';
 import { Switch } from '@/components/ui/switch';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { validateRoleCompatibility, ValidateRoleCompatibilityOutput } from '@/ai/flows/validate-role-compatibility-flow';
 
 const SpeechRecognition =
   (typeof window !== 'undefined' && window.SpeechRecognition) ||
@@ -66,8 +70,6 @@ type InterviewType = 'Technical' | 'HR' | 'Behavioral' | 'Mixed';
 interface InterviewSessionItem {
   question: string;
   answer: string;
-  analysis: AnalyzeInterviewAnswerOutput;
-  score: number;
 }
 
 const TOTAL_QUESTIONS = 15;
@@ -86,6 +88,7 @@ export default function InterviewPage() {
   const [isInterviewCompleted, setIsInterviewCompleted] = useState(false);
   const [isValidating, setIsValidating] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [isFinalizing, setIsFinalizing] = useState(false);
   const [compatibility, setCompatibility] = useState<ValidateRoleCompatibilityOutput | null>(null);
   const [isNarrationEnabled, setIsNarrationEnabled] = useState(false);
   
@@ -237,14 +240,13 @@ export default function InterviewPage() {
   const fetchNextQuestion = async (isFirst = false, missingSkills?: string[]) => {
     setLoading(true);
     try {
-      const history = sessionHistory.map(h => ({ question: h.question, answer: h.answer }));
       const result = await mockInterviewWithRealtimeFeedback({
         jobRole,
         difficulty,
         interviewType,
         resumeDataUri: compatibility?.parsingError ? undefined : resumeDataUri,
         missingSkills,
-        history
+        history: sessionHistory
       });
       setCurrentQuestion(result.question);
       setQuestionIndex(prev => prev + 1);
@@ -269,20 +271,16 @@ export default function InterviewPage() {
         toast({ title: "Answer Required", description: "Please provide an answer before submitting." });
         return;
       }
-      finalAnswer = `[${interviewMode === 'audio' ? 'Audio' : 'Video'} response recorded - transcription unavailable]`;
+      finalAnswer = interviewMode === 'audio' ? "[Audio response recorded - transcription unavailable]" : "[Video response recorded - transcription unavailable]";
     }
 
     setLoading(true);
     try {
-      const feedback = await analyzeInterviewAnswer({ question: currentQuestion, answer: finalAnswer });
       const newItem: InterviewSessionItem = {
         question: currentQuestion,
         answer: finalAnswer,
-        analysis: feedback,
-        score: feedback.score
       };
       setSessionHistory(prev => [...prev, newItem]);
-      
       setUserAnswer('');
       setCurrentQuestion('');
 
@@ -299,12 +297,18 @@ export default function InterviewPage() {
   };
 
   const handleGenerateReport = async (retryCount = 0) => {
+    setIsFinalizing(true);
     setLoading(true);
     try {
+      // Freeze and finalize history
+      const finalizedHistory = [...sessionHistory];
+      
       const report = await generateFinalReport({ 
         jobRole, 
+        difficulty,
+        interviewMode,
         resumeDataUri: compatibility?.parsingError ? undefined : resumeDataUri, 
-        history: sessionHistory 
+        history: finalizedHistory 
       });
       setFinalReport(report);
       setIsInterviewCompleted(true);
@@ -315,10 +319,11 @@ export default function InterviewPage() {
       toast({ 
         variant: 'destructive', 
         title: 'Report generation failed', 
-        description: 'We encountered a hiccup. Please try again in a moment.' 
+        description: 'We’re generating your report. Please try again in a moment.' 
       });
     } finally {
       setLoading(false);
+      setIsFinalizing(false);
     }
   };
 
@@ -334,46 +339,85 @@ export default function InterviewPage() {
 
   if (finalReport) {
     return (
-      <div className="max-w-4xl mx-auto space-y-6 animate-fade-in-up">
+      <div className="max-w-4xl mx-auto space-y-6 animate-fade-in-up pb-20">
         <Card className="border-primary/20 shadow-xl overflow-hidden">
           <CardHeader className="bg-primary/10 border-b">
-            <div className="flex justify-between items-center">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
               <div>
                 <CardTitle className="text-2xl font-bold flex items-center gap-2">
                   <Trophy className="text-yellow-500" /> Interview Report
                 </CardTitle>
-                <CardDescription>Target Role: {jobRole} | {difficulty} {interviewType}</CardDescription>
-                {sessionHistory.length < TOTAL_QUESTIONS && (
-                  <Badge variant="secondary" className="mt-2 bg-yellow-500/10 text-yellow-600 border-yellow-500/20">
-                    Partial Session ({sessionHistory.length} Answers)
+                <CardDescription className="flex items-center gap-2 mt-1">
+                  Target Role: <Badge variant="secondary">{jobRole}</Badge>
+                </CardDescription>
+                <div className="flex gap-2 mt-2">
+                  <Badge variant="outline">{difficulty}</Badge>
+                  <Badge variant="outline" className="capitalize">{interviewMode} Mode</Badge>
+                  <Badge variant={finalReport.summary.status === 'Completed' ? "default" : "secondary"}>
+                    {finalReport.summary.status} ({finalReport.summary.questionsAnswered} / {TOTAL_QUESTIONS})
                   </Badge>
-                )}
+                </div>
               </div>
-              <div className="text-right">
-                <p className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Overall Score</p>
+              <div className="bg-background rounded-xl p-4 border shadow-sm flex flex-col items-center min-w-[140px]">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-1">Overall Readiness</p>
                 <p className="text-4xl font-black text-primary">{finalReport.overallScore}%</p>
               </div>
             </div>
           </CardHeader>
-          <CardContent className="pt-6 space-y-8">
-            <div className="grid md:grid-cols-2 gap-6">
+          <CardContent className="pt-8 space-y-10">
+            {/* Summary Alerts */}
+            <Alert className="bg-primary/5 border-primary/20">
+              <Zap className="w-5 h-5 text-primary" />
+              <AlertTitle className="font-bold">Expert Readiness Verdict</AlertTitle>
+              <AlertDescription className="text-sm italic">&quot;{finalReport.readinessVerdict}&quot;</AlertDescription>
+            </Alert>
+
+            {/* Q&A Review */}
+            <div className="space-y-4">
+              <h3 className="font-bold text-lg flex items-center gap-2"><MessageSquare className="w-5 h-5 text-primary" /> Question-by-Question Review</h3>
+              <Accordion type="single" collapsible className="w-full border rounded-lg overflow-hidden">
+                {finalReport.questionReviews.map((review, i) => (
+                  <AccordionItem key={i} value={`q-${i}`} className="border-b last:border-0 px-4">
+                    <AccordionTrigger className="hover:no-underline">
+                      <div className="flex text-left gap-3">
+                        <span className="text-muted-foreground font-bold">{i + 1}.</span>
+                        <span className="font-medium line-clamp-1">{review.question}</span>
+                      </div>
+                    </AccordionTrigger>
+                    <AccordionContent className="space-y-4 pt-2">
+                      <div className="bg-muted p-3 rounded-md">
+                        <p className="text-xs font-bold text-muted-foreground uppercase mb-1 flex items-center gap-1"><User className="w-3 h-3"/> Your Answer</p>
+                        <p className="text-sm italic">{review.answer}</p>
+                      </div>
+                      <div className="bg-primary/5 p-3 rounded-md border border-primary/10">
+                        <p className="text-xs font-bold text-primary uppercase mb-1 flex items-center gap-1"><Zap className="w-3 h-3"/> AI Analysis</p>
+                        <p className="text-sm">{review.feedback}</p>
+                      </div>
+                    </AccordionContent>
+                  </AccordionItem>
+                ))}
+              </Accordion>
+            </div>
+
+            {/* Signals */}
+            <div className="grid md:grid-cols-2 gap-8">
               <div className="space-y-4">
-                <h3 className="font-bold text-lg flex items-center gap-2"><Target className="w-5 h-5 text-green-500" /> Key Strengths</h3>
+                <h3 className="font-bold text-lg flex items-center gap-2"><Target className="w-5 h-5 text-green-500" /> Core Strengths</h3>
                 <ul className="space-y-2">
                   {finalReport.strengths.map((s, i) => (
-                    <li key={i} className="flex items-start gap-2 text-sm bg-muted p-2 rounded-md">
-                      <div className="w-1.5 h-1.5 rounded-full bg-green-500 mt-1.5 shrink-0" />
+                    <li key={i} className="flex items-start gap-2 text-sm bg-muted/50 p-3 rounded-lg border border-transparent hover:border-green-500/20 transition-colors">
+                      <CheckCircle2 className="w-4 h-4 text-green-500 mt-0.5 shrink-0" />
                       {s}
                     </li>
                   ))}
                 </ul>
               </div>
               <div className="space-y-4">
-                <h3 className="font-bold text-lg flex items-center gap-2"><AlertCircle className="w-5 h-5 text-red-500" /> Areas to Improve</h3>
+                <h3 className="font-bold text-lg flex items-center gap-2"><AlertCircle className="w-5 h-5 text-red-500" /> Growth Areas</h3>
                 <ul className="space-y-2">
                   {finalReport.weaknesses.map((w, i) => (
-                    <li key={i} className="flex items-start gap-2 text-sm bg-muted p-2 rounded-md">
-                      <div className="w-1.5 h-1.5 rounded-full bg-red-500 mt-1.5 shrink-0" />
+                    <li key={i} className="flex items-start gap-2 text-sm bg-muted/50 p-3 rounded-lg border border-transparent hover:border-red-500/20 transition-colors">
+                      <AlertTriangle className="w-4 h-4 text-red-500 mt-0.5 shrink-0" />
                       {w}
                     </li>
                   ))}
@@ -381,8 +425,9 @@ export default function InterviewPage() {
               </div>
             </div>
 
+            {/* Skill Gaps */}
             <div className="space-y-4">
-              <h3 className="font-bold text-lg flex items-center gap-2"><BarChart className="w-5 h-5 text-blue-500" /> Skill Gaps for {jobRole}</h3>
+              <h3 className="font-bold text-lg flex items-center gap-2"><BarChart className="w-5 h-5 text-blue-500" /> Role-Specific Skill Gaps</h3>
               <div className="flex flex-wrap gap-2">
                 {finalReport.skillGaps.map((gap, i) => (
                   <Badge key={i} variant="outline" className="text-sm py-1 px-3 border-blue-500/30 bg-blue-500/5">{gap}</Badge>
@@ -390,20 +435,64 @@ export default function InterviewPage() {
               </div>
             </div>
 
-            <Alert className="bg-primary/5 border-primary/20">
-              <Lightbulb className="w-5 h-5 text-primary" />
-              <AlertTitle className="font-bold">AI Improvement Suggestions</AlertTitle>
-              <AlertDescription className="text-sm">{finalReport.improvementSuggestions}</AlertDescription>
-            </Alert>
-
-            <div className="pt-6 border-t">
-              <p className="font-bold mb-2">Final Verdict</p>
-              <p className="text-muted-foreground italic">&quot;{finalReport.readinessVerdict}&quot;</p>
+            {/* Overall Feedback */}
+            <div className="space-y-4">
+              <h3 className="font-bold text-lg flex items-center gap-2"><Activity className="w-5 h-5 text-orange-500" /> Performance Breakdown</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <Card className="bg-muted/30 border-0 shadow-none">
+                  <CardContent className="p-4">
+                    <p className="text-xs font-bold text-muted-foreground uppercase mb-1">Communication</p>
+                    <p className="text-sm">{finalReport.overallFeedback.communicationClarity}</p>
+                  </CardContent>
+                </Card>
+                <Card className="bg-muted/30 border-0 shadow-none">
+                  <CardContent className="p-4">
+                    <p className="text-xs font-bold text-muted-foreground uppercase mb-1">Technical Depth</p>
+                    <p className="text-sm">{finalReport.overallFeedback.technicalDepth}</p>
+                  </CardContent>
+                </Card>
+                <Card className="bg-muted/30 border-0 shadow-none">
+                  <CardContent className="p-4">
+                    <p className="text-xs font-bold text-muted-foreground uppercase mb-1">Problem Solving</p>
+                    <p className="text-sm">{finalReport.overallFeedback.problemSolving}</p>
+                  </CardContent>
+                </Card>
+                <Card className="bg-muted/30 border-0 shadow-none">
+                  <CardContent className="p-4">
+                    <p className="text-xs font-bold text-muted-foreground uppercase mb-1">Confidence</p>
+                    <p className="text-sm">{finalReport.overallFeedback.confidence}</p>
+                  </CardContent>
+                </Card>
+              </div>
             </div>
 
-            <Button onClick={() => window.location.reload()} className="w-full h-12 text-lg font-bold">
-              Try Another Session <RefreshCcw className="ml-2 w-5 h-5" />
-            </Button>
+            {/* Next Steps */}
+            <div className="space-y-4">
+              <h3 className="font-bold text-lg flex items-center gap-2"><Lightbulb className="w-5 h-5 text-yellow-500" /> Actionable Next Steps</h3>
+              <div className="grid gap-3">
+                {finalReport.improvementSuggestions.map((step, i) => (
+                  <div key={i} className="flex items-center gap-3 p-3 rounded-lg border bg-background group hover:border-primary/50 transition-colors">
+                    <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
+                      {i + 1}
+                    </div>
+                    <p className="text-sm">{step}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="pt-8 border-t flex flex-col sm:flex-row gap-4">
+              <Button onClick={() => window.location.reload()} className="flex-1 h-12 text-lg font-bold" variant="outline">
+                New Session <RefreshCcw className="ml-2 w-5 h-5" />
+              </Button>
+              <Button onClick={() => window.print()} className="flex-1 h-12 text-lg font-bold">
+                Download PDF <FileSearch className="ml-2 w-5 h-5" />
+              </Button>
+            </div>
+            
+            <p className="text-center text-[10px] text-muted-foreground mt-4">
+              &copy; PathFinders AI. This report is based on the responses submitted during this mock interview session.
+            </p>
           </CardContent>
         </Card>
       </div>
@@ -586,7 +675,7 @@ export default function InterviewPage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <Button className="w-full h-14 text-xl font-bold" onClick={() => handleGenerateReport()} disabled={loading}>
+            <Button className="w-full h-14 text-xl font-bold" onClick={() => handleGenerateReport()} disabled={loading || isFinalizing}>
               {loading ? <Loader2 className="animate-spin mr-2" /> : <><FileSearch className="mr-2" /> Generate Interview Report</>}
             </Button>
             <p className="text-sm text-muted-foreground">
