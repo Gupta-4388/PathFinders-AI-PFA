@@ -15,7 +15,7 @@ const ValidateRoleCompatibilityInputSchema = z.object({
 export type ValidateRoleCompatibilityInput = z.infer<typeof ValidateRoleCompatibilityInputSchema>;
 
 const ValidateRoleCompatibilityOutputSchema = z.object({
-  isCompatible: z.boolean().describe('Whether the resume has the foundational skills for the job role.'),
+  isCompatible: z.boolean().describe('Whether the resume has the foundational skills for the job role (Score >= 40).'),
   matchScore: z.number().describe('A score from 0-100 indicating the skill match.'),
   missingSkills: z.array(z.string()).describe('Critical skills for the role that are missing from the resume.'),
   foundationalSkills: z.array(z.string()).describe('Skills found in the resume that match the role.'),
@@ -38,15 +38,15 @@ const compatibilityPrompt = ai.definePrompt({
 Resume Text:
 {{{resumeText}}}
 
-Evaluate the compatibility:
-1. Identify the core skills and experience required for a "{{{jobRole}}}".
-2. Check if the resume contains at least 30-40% of the foundational skills needed for this role.
-3. If the resume is completely unrelated (e.g., a Chef's resume for a Software Engineer role), set isCompatible to false.
-4. Provide a match score (0-100).
-5. List the skills that were found and the critical ones that are missing.
-6. Give brief, professional feedback explaining your determination.
+Evaluate the compatibility using a weighted system:
+1. Identify Mandatory (core), Important (preferred), and Optional (bonus) skills for a "{{{jobRole}}}".
+2. Calculate a Match Score (0-100) based on how well the resume satisfies these categories.
+3. If the resume contains the basic foundations or related skills (even if not an exact match), give credit.
+4. If the Match Score is 40 or higher, set isCompatible to true.
+5. List the foundational skills found and the critical missing ones.
+6. Provide professional feedback. If the score is between 40-59, mention it's a partial match. If below 40, explain why it's too low for a realistic interview.
 
-IMPORTANT: Be realistic. A candidate doesn't need 100% match to interview, but they need the right foundation.`,
+IMPORTANT: Be realistic. Do not require a 100% match. A score of 60+ is a strong match. 40-59 is a partial/warning match.`,
 });
 
 const validateRoleCompatibilityFlow = ai.defineFlow(

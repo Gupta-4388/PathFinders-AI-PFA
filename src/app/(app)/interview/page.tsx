@@ -20,6 +20,8 @@ import {
   Target,
   BarChart,
   Lightbulb,
+  CheckCircle2,
+  AlertTriangle,
 } from 'lucide-react';
 import { useDropzone } from 'react-dropzone';
 import {
@@ -80,6 +82,7 @@ export default function InterviewPage() {
   const [isValidating, setIsValidating] = useState(false);
   const [loading, setLoading] = useState(false);
   const [compatibility, setCompatibility] = useState<ValidateRoleCompatibilityOutput | null>(null);
+  const [showWarning, setShowWarning] = useState(false);
   
   // Session state
   const [currentQuestion, setCurrentQuestion] = useState('');
@@ -208,12 +211,18 @@ export default function InterviewPage() {
     }
 
     setIsValidating(true);
+    setShowWarning(false);
     try {
       const val = await validateRoleCompatibility({ jobRole, resumeText });
       setCompatibility(val);
-      if (val.isCompatible) {
+      
+      if (val.matchScore >= 60) {
         setInterviewStarted(true);
-        fetchNextQuestion(true);
+        fetchNextQuestion(true, val.missingSkills);
+      } else if (val.matchScore >= 40) {
+        setShowWarning(true);
+      } else {
+        // matchScore < 40, handled by Alert UI
       }
     } catch (e) {
       toast({ variant: 'destructive', title: 'Validation Error' });
@@ -222,7 +231,12 @@ export default function InterviewPage() {
     }
   };
 
-  const fetchNextQuestion = async (isFirst = false) => {
+  const proceedWithInterview = () => {
+    setInterviewStarted(true);
+    fetchNextQuestion(true, compatibility?.missingSkills);
+  };
+
+  const fetchNextQuestion = async (isFirst = false, missingSkills?: string[]) => {
     setLoading(true);
     try {
       const history = sessionHistory.map(h => ({ question: h.question, answer: h.answer }));
@@ -231,6 +245,7 @@ export default function InterviewPage() {
         difficulty,
         interviewType,
         resumeText,
+        missingSkills,
         history
       });
       setCurrentQuestion(result.question);
@@ -261,7 +276,7 @@ export default function InterviewPage() {
       setCurrentQuestion('');
       setUserAnswer('');
       setRecordedMediaUrl(null);
-      fetchNextQuestion();
+      fetchNextQuestion(false, compatibility?.missingSkills);
     } catch (e) {
       toast({ variant: 'destructive', title: 'Submission failed' });
     } finally {
@@ -363,11 +378,11 @@ export default function InterviewPage() {
       <div className="max-w-3xl mx-auto p-4 sm:p-0 animate-fade-in-up">
         <Card className="shadow-2xl border-primary/10">
           <CardHeader className="text-center">
-            <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+            <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4 overflow-hidden">
               <img src="https://github.com/Gupta-4388/PFA-logo/blob/main/PFA-Mock%202.png?raw=true" alt="Mock 2" className="w-12 h-12" />
             </div>
             <CardTitle className="text-3xl font-bold">Interview Simulator Pro</CardTitle>
-            <CardDescription>Setup your session. We'll validate your resume against the role.</CardDescription>
+            <CardDescription>Setup your session. We'll analyze how your resume matches the role.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-8">
             <div className="grid md:grid-cols-2 gap-6">
@@ -434,29 +449,71 @@ export default function InterviewPage() {
                 <input {...getInputProps()} />
                 <Upload className="mx-auto w-10 h-10 text-muted-foreground mb-2" />
                 <p className="font-medium">{resumeFile ? resumeFile.name : "Drag resume here or click to browse"}</p>
-                <p className="text-xs text-muted-foreground mt-1">PDF or TXT required for role validation</p>
+                <p className="text-xs text-muted-foreground mt-1">PDF, DOCX, or TXT required</p>
               </div>
             </div>
 
-            {compatibility && !compatibility.isCompatible && (
-              <Alert variant="destructive" className="animate-pop-in">
-                <AlertCircle className="h-4 w-4" />
-                <AlertTitle>Incompatible Resume</AlertTitle>
-                <AlertDescription>
-                  {compatibility.feedback} 
-                  <div className="mt-2">
-                    <p className="font-bold">Missing Skills:</p>
-                    <div className="flex flex-wrap gap-1 mt-1">
-                      {compatibility.missingSkills.map(s => <Badge key={s} variant="outline" className="text-[10px]">{s}</Badge>)}
+            {compatibility && (
+              <div className="space-y-4 animate-pop-in">
+                {compatibility.matchScore >= 60 ? (
+                  <Alert className="border-green-500/50 bg-green-500/5">
+                    <CheckCircle2 className="h-4 w-4 text-green-500" />
+                    <AlertTitle className="text-green-700">Strong Match ({compatibility.matchScore}%)</AlertTitle>
+                    <AlertDescription className="text-green-600/80">
+                      Your resume aligns well with the requirements for a {jobRole}.
+                    </AlertDescription>
+                  </Alert>
+                ) : compatibility.matchScore >= 40 ? (
+                  <div className="space-y-4">
+                    <Alert className="border-yellow-500/50 bg-yellow-500/5">
+                      <AlertTriangle className="h-4 w-4 text-yellow-500" />
+                      <AlertTitle className="text-yellow-700">Partial Match ({compatibility.matchScore}%)</AlertTitle>
+                      <AlertDescription className="text-yellow-600/80">
+                        Your resume partially matches the selected role. You can still proceed with the mock interview to test your skills.
+                      </AlertDescription>
+                    </Alert>
+                    
+                    <div className="p-4 border rounded-lg bg-muted/30 space-y-3">
+                      <div className="flex flex-wrap gap-2">
+                        <span className="text-xs font-bold uppercase text-muted-foreground w-full">Foundational Skills Found:</span>
+                        {compatibility.foundationalSkills.map(s => <Badge key={s} variant="secondary" className="text-[10px]">{s}</Badge>)}
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        <span className="text-xs font-bold uppercase text-muted-foreground w-full">Missing Critical Skills:</span>
+                        {compatibility.missingSkills.map(s => <Badge key={s} variant="outline" className="text-[10px] border-yellow-500/30">{s}</Badge>)}
+                      </div>
+                    </div>
+
+                    <div className="flex gap-3">
+                      <Button onClick={proceedWithInterview} className="flex-1 font-bold">Proceed Anyway</Button>
+                      <Button variant="outline" onClick={() => setCompatibility(null)} className="flex-1 font-bold">Update Resume</Button>
                     </div>
                   </div>
-                </AlertDescription>
-              </Alert>
+                ) : (
+                  <div className="space-y-4">
+                    <Alert variant="destructive" className="border-red-500/50 bg-red-500/5 text-red-700">
+                      <AlertCircle className="h-4 w-4" />
+                      <AlertTitle>Low Match ({compatibility.matchScore}%)</AlertTitle>
+                      <AlertDescription>
+                        {compatibility.feedback}
+                      </AlertDescription>
+                    </Alert>
+                    <div className="p-4 border border-red-200 rounded-lg bg-red-50/30 space-y-2">
+                      <p className="text-xs font-bold uppercase text-red-600">Missing Critical Skills for {jobRole}:</p>
+                      <div className="flex flex-wrap gap-1">
+                        {compatibility.missingSkills.map(s => <Badge key={s} variant="outline" className="text-[10px] border-red-500/30 text-red-600">{s}</Badge>)}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
             )}
 
-            <Button onClick={handleStart} className="w-full h-12 text-lg font-bold" disabled={isValidating}>
-              {isValidating ? <Loader2 className="animate-spin mr-2" /> : "Start Mock Interview"}
-            </Button>
+            {!showWarning && (
+              <Button onClick={handleStart} className="w-full h-12 text-lg font-bold" disabled={isValidating || (compatibility && compatibility.matchScore < 40)}>
+                {isValidating ? <Loader2 className="animate-spin mr-2" /> : compatibility ? "Re-validate Resume" : "Start Mock Interview"}
+              </Button>
+            )}
           </CardContent>
         </Card>
       </div>
@@ -472,6 +529,9 @@ export default function InterviewPage() {
           <Badge variant="secondary">{jobRole}</Badge>
           <Badge variant="outline" className="capitalize">{difficulty}</Badge>
           <Badge variant="outline">{interviewType}</Badge>
+          {compatibility && compatibility.matchScore < 60 && (
+             <Badge variant="outline" className="border-yellow-500/50 text-yellow-600 bg-yellow-500/5">Partial Match</Badge>
+          )}
         </div>
         <Button variant="destructive" size="sm" onClick={handleEndInterview}>
           <X className="mr-2 h-4 w-4" /> End & Generate Report

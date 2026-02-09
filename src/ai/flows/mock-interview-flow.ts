@@ -17,6 +17,7 @@ const MockInterviewInputSchema = z.object({
   difficulty: z.enum(['Beginner', 'Intermediate', 'Advanced']).describe('The difficulty level of the interview.'),
   interviewType: z.enum(['Technical', 'HR', 'Behavioral', 'Mixed']).describe('The type of interview questions to generate.'),
   resumeText: z.string().describe('The text content of the uploaded resume.'),
+  missingSkills: z.array(z.string()).optional().describe('Skills identified as missing during validation.'),
   history: z.array(z.object({
     question: z.string(),
     answer: z.string()
@@ -44,6 +45,9 @@ INTERVIEW CONTEXT:
 - Difficulty Level: {{{difficulty}}}
 - Interview Type: {{{interviewType}}}
 - Candidate Resume: {{{resumeText}}}
+{{#if missingSkills}}
+- Missing Skills Identified: {{#each missingSkills}}{{{this}}}, {{/each}}
+{{/if}}
 
 SESSION HISTORY:
 {{#if history}}
@@ -56,9 +60,10 @@ A: {{{this.answer}}}
 INSTRUCTIONS:
 1. Generate one relevant, challenging, and role-specific interview question.
 2. The question must match the chosen difficulty ({{{difficulty}}}) and type ({{{interviewType}}}).
-3. Use the candidate's resume to tailor the question (e.g., asking about specific projects, tools, or experiences mentioned).
-4. Do NOT repeat questions or topics already covered in the history.
-5. Focus on assessing the candidate's readiness for the specific role of {{{jobRole}}}.
+3. Focus primarily on the candidate's actual experience and projects found in the resume.
+4. Occasionally (20-30% of the time), ask a question about one of the missing skills to probe the candidate's theoretical knowledge or willingness to learn.
+5. Do NOT repeat questions or topics already covered in the history.
+6. Focus on assessing the candidate's readiness for the specific role of {{{jobRole}}}.
 `,
 });
 
