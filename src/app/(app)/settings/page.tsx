@@ -15,7 +15,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { File as FileIcon, Loader2, LogOut, Upload, X } from 'lucide-react';
+import { File as FileIcon, Loader2, LogOut, Upload, X, AlertCircle } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useUser, useFirestore, useAuth } from '@/firebase';
 import { doc } from 'firebase/firestore';
@@ -39,6 +39,8 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
+import { analyzeResume } from '@/ai/flows/analyze-resume-flow';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 
 type UserProfile = {
   name?: string;
@@ -78,6 +80,8 @@ export default function SettingsPage() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [careerPath, setCareerPath] = useState('');
+  const [isValidatingResume, setIsValidatingResume] = useState(false);
+  const [rejectionModal, setRejectionModal] = useState<{ isOpen: boolean; reason: string }>({ isOpen: false, reason: '' });
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -186,11 +190,25 @@ export default function SettingsPage() {
         return;
       }
 
+      setIsValidatingResume(true);
       const reader = new FileReader();
       reader.readAsDataURL(file);
-      reader.onload = () => {
+      reader.onload = async () => {
         try {
           const resumeDataUri = reader.result as string;
+          
+          // Validate resume content before saving
+          const val = await analyzeResume({ resumeDataUri });
+          
+          if (!val.isResume) {
+            setRejectionModal({ 
+              isOpen: true, 
+              reason: val.rejectionReason || "The uploaded document does not appear to be a valid resume." 
+            });
+            setIsValidatingResume(false);
+            return;
+          }
+
           const dataToSave = { resumeDataUri, resumeFileName: file.name };
           setDocumentNonBlocking(userDocRef, dataToSave, { merge: true });
           setResumeFile({ name: file.name });
@@ -204,6 +222,8 @@ export default function SettingsPage() {
             title: 'Upload Failed',
             description: 'Could not save the resume. Please try again.',
           });
+        } finally {
+          setIsValidatingResume(false);
         }
       };
       reader.onerror = () => {
@@ -212,6 +232,7 @@ export default function SettingsPage() {
           title: 'File Read Error',
           description: 'Could not read the uploaded file.',
         });
+        setIsValidatingResume(false);
       };
     },
     [toast, userDocRef]
@@ -285,6 +306,23 @@ export default function SettingsPage() {
 
   return (
     <div className="space-y-6 animate-fade-in-up">
+      <Dialog open={rejectionModal.isOpen} onOpenChange={(open) => setRejectionModal(prev => ({ ...prev, isOpen: open }))}>
+        <DialogContent>
+          <DialogHeader>
+            <div className="mx-auto w-12 h-12 bg-destructive/10 rounded-full flex items-center justify-center mb-4">
+               <AlertCircle className="w-6 h-6 text-destructive" />
+            </div>
+            <DialogTitle className="text-center">Invalid Document</DialogTitle>
+            <DialogDescription className="text-center pt-2">
+              {rejectionModal.reason}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="mt-4">
+            <Button className="w-full" onClick={() => setRejectionModal({ isOpen: false, reason: '' })}>OK</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Settings</h1>
         <p className="text-muted-foreground">
@@ -357,7 +395,12 @@ export default function SettingsPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {!resumeFile ? (
+          {isValidatingResume ? (
+            <div className="flex flex-col items-center justify-center p-12 border-2 border-dashed rounded-lg bg-muted/50">
+              <Loader2 className="w-10 h-10 animate-spin text-primary mb-4" />
+              <p className="text-sm font-medium">Validating document content...</p>
+            </div>
+          ) : !resumeFile ? (
             <div
               {...getRootProps()}
               className={`flex flex-col items-center justify-center p-12 border-2 border-dashed rounded-lg cursor-pointer transition-colors ${

@@ -3,6 +3,7 @@
 
 /**
  * @fileOverview Validates if a resume is compatible with a selected job role before starting an interview.
+ * Now includes a strict check to ensure the document is a valid resume.
  */
 
 import { ai } from '@/ai/genkit';
@@ -15,12 +16,14 @@ const ValidateRoleCompatibilityInputSchema = z.object({
 export type ValidateRoleCompatibilityInput = z.infer<typeof ValidateRoleCompatibilityInputSchema>;
 
 const ValidateRoleCompatibilityOutputSchema = z.object({
+  isResume: z.boolean().describe('Whether the uploaded document is a valid professional resume or CV.'),
+  rejectionReason: z.string().optional().describe('If the document is not a resume (e.g., Aadhaar, PAN, simple certificate), explain why.'),
   isCompatible: z.boolean().describe('Whether the resume has the foundational skills for the job role (Score >= 40).'),
   matchScore: z.number().describe('A score from 0-100 indicating the skill match.'),
   missingSkills: z.array(z.string()).describe('Critical skills for the role that are missing from the resume.'),
   foundationalSkills: z.array(z.string()).describe('Skills found in the resume that match the role.'),
   feedback: z.string().describe("Advice on why the resume is or isn't compatible."),
-  parsingError: z.boolean().describe('Set to true if the document could not be read or is not a valid resume.'),
+  parsingError: z.boolean().describe('Set to true if the document could not be read or is very low quality.'),
 });
 export type ValidateRoleCompatibilityOutput = z.infer<typeof ValidateRoleCompatibilityOutputSchema>;
 
@@ -34,20 +37,23 @@ const compatibilityPrompt = ai.definePrompt({
   name: 'validateRoleCompatibilityPrompt',
   input: { schema: ValidateRoleCompatibilityInputSchema },
   output: { schema: ValidateRoleCompatibilityOutputSchema },
-  prompt: `You are an expert technical recruiter. Analyze the provided resume document against the requirements for the job role: "{{{jobRole}}}".
+  prompt: `You are an expert technical recruiter. Your primary goal is to analyze the provided resume against the job role: "{{{jobRole}}}".
+
+STEP 1: Validate if the document IS A RESUME. 
+A valid resume contains sections like Experience, Education, Skills, and Contact Info.
+REJECT (isResume: false) if the document is an Aadhaar card, PAN card, ID card, generic form, or a simple certificate without professional experience context. Provide a specific rejectionReason.
+
+STEP 2: Evaluate compatibility (ONLY if isResume is true).
+- Identify Mandatory, Important, and Optional skills for a "{{{jobRole}}}".
+- Calculate a Match Score (0-100).
+- If matchScore >= 40, set isCompatible to true.
+- List foundational and missing skills.
+- Provide professional feedback.
 
 Resume Document:
 {{media url=resumeDataUri}}
 
-Evaluate the compatibility using a weighted system:
-1. Identify Mandatory (core), Important (preferred), and Optional (bonus) skills for a "{{{jobRole}}}".
-2. Calculate a Match Score (0-100) based on how well the resume satisfies these categories.
-3. If the document is unreadable, blurry, or clearly not a resume, set 'parsingError' to true and 'matchScore' to 0.
-4. If the Match Score is 40 or higher, set isCompatible to true.
-5. List the foundational skills found and the critical missing ones.
-6. Provide professional feedback. If the score is between 40-59, mention it's a partial match. If below 40, explain why it's too low for a realistic interview.
-
-IMPORTANT: Be realistic. Do not require a 100% match. A score of 60+ is a strong match. 40-59 is a partial/warning match.`,
+IMPORTANT: If the document is unreadable or non-professional content, set parsingError to true. If it is clearly not a resume (like an ID card), isResume MUST be false.`,
 });
 
 const validateRoleCompatibilityFlow = ai.defineFlow(

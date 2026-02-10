@@ -2,15 +2,11 @@
 'use server';
 
 /**
- * @fileOverview Resume analysis flow.
+ * @fileOverview Resume analysis flow with strict resume-only validation.
  *
  * This flow analyzes a resume to identify skills, projects, and potential mistakes,
- * providing AI-driven insights to improve it.
- *
- * @remarks
- * - analyzeResume - The function to analyze the resume and provide insights.
- * - AnalyzeResumeInput - The input type for the analyzeResume function.
- * - AnalyzeResumeOutput - The return type for the analyzeResume function.
+ * providing AI-driven insights to improve it. It specifically rejects non-resume
+ * documents like ID cards, certificates without context, or random images.
  */
 
 import {ai} from '@/ai/genkit';
@@ -38,8 +34,8 @@ const SuggestedRoleSchema = z.object({
 });
 
 const AnalyzeResumeOutputSchema = z.object({
-  isResume: z.boolean().describe('Whether the uploaded document is a resume or CV.'),
-  rejectionReason: z.string().optional().describe('If the document is not a resume, explain why.'),
+  isResume: z.boolean().describe('Whether the uploaded document is a valid professional resume or CV.'),
+  rejectionReason: z.string().optional().describe('If the document is not a resume (e.g., ID card, PAN, certificate only), explain why.'),
   skillSummary: z
     .string()
     .optional()
@@ -74,15 +70,28 @@ const analyzeResumePrompt = ai.definePrompt({
   name: 'analyzeResumePrompt',
   input: {schema: AnalyzeResumeInputSchema},
   output: {schema: AnalyzeResumeOutputSchema},
-  prompt: `You are an expert career coach and tech recruiter. Your first task is to determine if the provided document is a professional resume or CV.
+  prompt: `You are an expert career coach and tech recruiter. Your first and most critical task is to determine if the provided document is a professional resume or CV.
 
-If the document is a resume/CV, set 'isResume' to true and provide the following analysis:
-1.  A high-level summary of the user's skills.
-2.  A short, optimized list of actionable insights to improve the resume (e.g., clarity, impact, missing information).
-3.  A concise list of the top 5 most relevant skills extracted from the resume content.
-4.  Analyze current job market openings and suggest 3-5 suitable roles for the candidate, including a title, a short description, and a match confidence score.
+A valid resume MUST contain MOST of the following:
+- Candidate Name and Contact Info (Email/Phone)
+- Skills section
+- Education history
+- Professional Experience, Internships, or Projects
+- Strong resume indicators: bullet points for work history, action verbs (developed, designed), and role-specific keywords.
 
-If the document is NOT a resume/CV, set 'isResume' to false, provide a brief 'rejectionReason' explaining why it's not a resume (e.g., "The document appears to be a receipt."), and do not fill out the other analysis fields.
+REJECT the document (isResume: false) if it is:
+- A government ID (Aadhaar, PAN, Passport, Driving License, etc.)
+- A simple certificate or award without professional experience/skills context.
+- A legal form, invoice, receipt, or random non-professional image.
+- A document consisting ONLY of an ID number or a single photo.
+
+If 'isResume' is true, provide:
+1. A high-level summary of skills.
+2. A list of actionable insights.
+3. Top 5 extracted skills.
+4. Suggested roles based on market analysis.
+
+If 'isResume' is false, set 'rejectionReason' to something like "The uploaded document appears to be an Aadhaar card and not a resume." or "The document is a certificate, not a full resume."
 
 Document:
 {{media url=resumeDataUri}}`,

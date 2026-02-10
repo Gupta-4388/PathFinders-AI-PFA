@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
@@ -58,6 +59,7 @@ import { Progress } from '@/components/ui/progress';
 import { Switch } from '@/components/ui/switch';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { validateRoleCompatibility, ValidateRoleCompatibilityOutput } from '@/ai/flows/validate-role-compatibility-flow';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 
 const SpeechRecognition =
   (typeof window !== 'undefined' && (window.SpeechRecognition || (window as any).webkitSpeechRecognition));
@@ -90,6 +92,7 @@ export default function InterviewPage() {
   const [isFinalizing, setIsFinalizing] = useState(false);
   const [compatibility, setCompatibility] = useState<ValidateRoleCompatibilityOutput | null>(null);
   const [isNarrationEnabled, setIsNarrationEnabled] = useState(false);
+  const [rejectionModalOpen, setRejectionModalOpen] = useState(false);
   
   // Session state
   const [currentQuestion, setCurrentQuestion] = useState('');
@@ -123,6 +126,7 @@ export default function InterviewPage() {
         setResumeDataUri(dataUri);
       };
       reader.readAsDataURL(file);
+      setCompatibility(null);
     }
   }, []);
 
@@ -222,7 +226,13 @@ export default function InterviewPage() {
     setIsValidating(true);
     try {
       const val = await validateRoleCompatibility({ jobRole, resumeDataUri });
-      setCompatibility(val);
+      
+      if (!val.isResume) {
+        setCompatibility(val);
+        setRejectionModalOpen(true);
+      } else {
+        setCompatibility(val);
+      }
     } catch (e) {
       toast({ variant: 'destructive', title: 'Validation Error', description: 'Could not validate your resume. Please try again.' });
     } finally {
@@ -494,6 +504,29 @@ export default function InterviewPage() {
   if (!interviewStarted) {
     return (
       <div className="max-w-3xl mx-auto p-4 sm:p-0 animate-fade-in-up">
+        <Dialog open={rejectionModalOpen} onOpenChange={setRejectionModalOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <div className="mx-auto w-12 h-12 bg-destructive/10 rounded-full flex items-center justify-center mb-4">
+                 <AlertCircle className="w-6 h-6 text-destructive" />
+              </div>
+              <DialogTitle className="text-center">Invalid Document Uploaded</DialogTitle>
+              <DialogDescription className="text-center pt-2">
+                {compatibility?.rejectionReason || "The uploaded document does not appear to be a resume. Please upload a valid resume to continue."}
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter className="flex-col sm:flex-row gap-2 mt-4">
+              <Button variant="outline" className="flex-1" onClick={() => setRejectionModalOpen(false)}>Cancel</Button>
+              <Button className="flex-1" onClick={() => {
+                setRejectionModalOpen(false);
+                setResumeFile(null);
+                setResumeDataUri('');
+                setCompatibility(null);
+              }}>Re-upload Resume</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
         <Card className="shadow-2xl border-primary/10">
           <CardHeader className="text-center">
             <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4 overflow-hidden">
@@ -571,7 +604,7 @@ export default function InterviewPage() {
               </div>
             </div>
 
-            {compatibility && (
+            {compatibility && compatibility.isResume && (
               <div className="space-y-4 animate-pop-in">
                 {compatibility.parsingError ? (
                   <Alert className="border-yellow-500/50 bg-yellow-500/5">
@@ -605,7 +638,11 @@ export default function InterviewPage() {
                    <Button onClick={proceedWithInterview} className="flex-1 font-bold" disabled={compatibility.matchScore < 40 && !compatibility.parsingError}>
                      Proceed with Interview
                    </Button>
-                  <Button variant="outline" onClick={() => setCompatibility(null)} className="flex-1 font-bold">Re-upload Resume</Button>
+                  <Button variant="outline" onClick={() => {
+                    setCompatibility(null);
+                    setResumeFile(null);
+                    setResumeDataUri('');
+                  }} className="flex-1 font-bold">Re-upload Resume</Button>
                 </div>
               </div>
             )}
