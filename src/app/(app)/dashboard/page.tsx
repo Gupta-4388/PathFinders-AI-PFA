@@ -1,6 +1,7 @@
+
 'use client';
 
-import { useMemo, useEffect, useState } from 'react';
+import { useMemo, useEffect, useState, useRef } from 'react';
 import {
   ArrowRight,
   BookOpen,
@@ -43,6 +44,9 @@ export default function DashboardPage() {
   const { toast } = useToast();
   const { user } = useUser();
   const firestore = useFirestore();
+  
+  const lastAnalyzedUri = useRef<string | null>(null);
+  const isAnalyzing = useRef(false);
 
   const userDocRef = useMemo(
     () => (user ? doc(firestore, 'users', user.uid) : null),
@@ -52,8 +56,9 @@ export default function DashboardPage() {
 
   useEffect(() => {
     const fetchRecommendations = async () => {
-      setLoading(true);
-      
+      // Avoid redundant calls and potential rate limit issues
+      if (isAnalyzing.current) return;
+
       if (typeof window !== 'undefined') {
         const existingData = localStorage.getItem('recommendedCareerPaths');
         if (existingData) {
@@ -71,6 +76,14 @@ export default function DashboardPage() {
       }
       
       if (userProfile && userProfile.resumeDataUri) {
+        // Prevent redundant analysis if URI hasn't changed
+        if (lastAnalyzedUri.current === userProfile.resumeDataUri) {
+          setLoading(false);
+          return;
+        }
+
+        isAnalyzing.current = true;
+        setLoading(true);
         try {
           const analysisResult = await analyzeResume({ resumeDataUri: userProfile.resumeDataUri });
 
@@ -86,14 +99,17 @@ export default function DashboardPage() {
               );
             }
             setRecommendedPaths(careerPathResult);
+            lastAnalyzedUri.current = userProfile.resumeDataUri;
           }
         } catch (error) {
           console.error('Failed to generate career paths:', error);
           toast({
             variant: 'destructive',
             title: 'Analysis Failed',
-            description: 'Could not generate career recommendations from your resume.',
+            description: 'Could not generate career recommendations. Please try again in a moment.',
           });
+        } finally {
+          isAnalyzing.current = false;
         }
       }
       setLoading(false);
@@ -183,7 +199,10 @@ export default function DashboardPage() {
         <CardContent>
           {loading ? (
             <div className="flex items-center justify-center py-8">
-              <Loader2 className="w-8 h-8 animate-spin text-primary" />
+              <div className="flex flex-col items-center gap-2">
+                <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                <p className="text-sm text-muted-foreground animate-pulse">Calculating paths...</p>
+              </div>
             </div>
           ) : recommendedPaths && recommendedPaths.careerPaths && recommendedPaths.careerPaths.length > 0 ? (
             <div className="grid gap-6">

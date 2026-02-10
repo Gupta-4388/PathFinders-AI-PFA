@@ -81,7 +81,21 @@ const mockInterviewFlow = ai.defineFlow(
     outputSchema: MockInterviewOutputSchema,
   },
   async input => {
-    const {output} = await mockInterviewPrompt(input);
-    return output!;
+    let attempts = 0;
+    const maxAttempts = 3;
+    while (attempts < maxAttempts) {
+      try {
+        const {output} = await mockInterviewPrompt(input);
+        return output!;
+      } catch (error: any) {
+        attempts++;
+        const isRateLimit = error?.message?.includes('429') || error?.message?.includes('Quota exceeded');
+        if (attempts >= maxAttempts || !isRateLimit) {
+          throw error;
+        }
+        await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempts) * 1000));
+      }
+    }
+    throw new Error('Failed to generate interview question after multiple attempts due to rate limits.');
   }
 );

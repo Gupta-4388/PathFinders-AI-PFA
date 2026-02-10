@@ -59,7 +59,21 @@ const recommendCareerPathsFlow = ai.defineFlow(
     outputSchema: RecommendCareerPathsOutputSchema,
   },
   async (input) => {
-    const { output } = await recommendCareerPathsPrompt(input);
-    return output!;
+    let attempts = 0;
+    const maxAttempts = 3;
+    while (attempts < maxAttempts) {
+      try {
+        const { output } = await recommendCareerPathsPrompt(input);
+        return output!;
+      } catch (error: any) {
+        attempts++;
+        const isRateLimit = error?.message?.includes('429') || error?.message?.includes('Quota exceeded');
+        if (attempts >= maxAttempts || !isRateLimit) {
+          throw error;
+        }
+        await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempts) * 1000));
+      }
+    }
+    throw new Error('Failed to recommend career paths after multiple attempts due to rate limits.');
   }
 );

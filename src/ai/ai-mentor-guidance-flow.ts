@@ -85,7 +85,21 @@ const aiMentorProvidePersonalizedGuidanceFlow = ai.defineFlow(
     outputSchema: AIMentorProvidePersonalizedGuidanceOutputSchema,
   },
   async input => {
-    const {output} = await prompt(input);
-    return output!;
+    let attempts = 0;
+    const maxAttempts = 3;
+    while (attempts < maxAttempts) {
+      try {
+        const {output} = await prompt(input);
+        return output!;
+      } catch (error: any) {
+        attempts++;
+        const isRateLimit = error?.message?.includes('429') || error?.message?.includes('Quota exceeded');
+        if (attempts >= maxAttempts || !isRateLimit) {
+          throw error;
+        }
+        await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempts) * 1000));
+      }
+    }
+    throw new Error('Mentor guidance failed after multiple attempts due to rate limits.');
   }
 );

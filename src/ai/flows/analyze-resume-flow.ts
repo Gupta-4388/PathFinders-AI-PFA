@@ -104,7 +104,22 @@ const analyzeResumeFlow = ai.defineFlow(
     outputSchema: AnalyzeResumeOutputSchema,
   },
   async input => {
-    const {output} = await analyzeResumePrompt(input);
-    return output!;
+    let attempts = 0;
+    const maxAttempts = 3;
+    while (attempts < maxAttempts) {
+      try {
+        const {output} = await analyzeResumePrompt(input);
+        return output!;
+      } catch (error: any) {
+        attempts++;
+        const isRateLimit = error?.message?.includes('429') || error?.message?.includes('Quota exceeded');
+        if (attempts >= maxAttempts || !isRateLimit) {
+          throw error;
+        }
+        // Wait with exponential backoff: 2s, 4s, 8s
+        await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempts) * 1000));
+      }
+    }
+    throw new Error('Failed to analyze resume after multiple attempts due to rate limits.');
   }
 );
