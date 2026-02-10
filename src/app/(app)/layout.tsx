@@ -65,33 +65,52 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     if (user && userDocRef) {
       const providerId = user.providerData?.[0]?.providerId;
       
-      const checkAndSync = async () => {
+      const checkAndSyncUserData = async () => {
         try {
           const docSnap = await getDoc(userDocRef);
-          
-          const baseData = {
-            id: user.uid,
-            email: user.email,
-            name: user.displayName,
-            signUpMethod: providerId || 'unknown',
-          };
 
           if (!docSnap.exists()) {
-            // Document doesn't exist, initialize with Auth data if possible
-            await setDoc(userDocRef, {
-              ...baseData,
-              profilePhoto: user.photoURL,
-            }, { merge: true });
+            // If the user document doesn't exist, create it silently
+            // with data from the authentication provider.
+            const newUserData = {
+              id: user.uid,
+              email: user.email,
+              name: user.displayName || '',
+              profilePhoto: user.photoURL || null,
+              signUpMethod: providerId || 'unknown',
+            };
+            await setDoc(userDocRef, newUserData, { merge: true });
           } else {
-            // Document exists, only update core fields, preserve profilePhoto from Firestore
-            await setDoc(userDocRef, baseData, { merge: true });
+            // Document exists, ensure it is synchronized without overwriting
+            // user-modified data (like name or profilePhoto).
+            const existingData = docSnap.data();
+            const updates: { [key: string]: any } = {};
+
+            // Only update fields in Firestore if they are missing.
+            if (!existingData.name && user.displayName) {
+              updates.name = user.displayName;
+            }
+            if (!existingData.profilePhoto && user.photoURL) {
+              updates.profilePhoto = user.photoURL;
+            }
+            
+            // Sync email if it's missing.
+            if (!existingData.email && user.email) {
+              updates.email = user.email;
+            }
+
+            if (Object.keys(updates).length > 0) {
+              await setDoc(userDocRef, updates, { merge: true });
+            }
           }
         } catch (error) {
-          console.error("Layout: Failed to sync user data", error);
+          // Gracefully handle potential Firestore permission errors or other issues
+          // without crashing the application.
+          console.error("Layout: Failed to sync user data. This is non-critical and the app will continue.", error);
         }
       };
 
-      checkAndSync();
+      checkAndSyncUserData();
     }
   }, [user, userDocRef]);
 
