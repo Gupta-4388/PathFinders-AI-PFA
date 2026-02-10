@@ -34,7 +34,7 @@ type Message = {
 type UserProfile = {
   name?: string;
   resumeDataUri?: string;
-  profilePicture?: string;
+  profilePhoto?: string;
 };
 
 const groupedResources = (resources: AIMentorProvidePersonalizedGuidanceOutput['suggestedResources']) => {
@@ -197,7 +197,7 @@ export default function MentorPage() {
                   </div>
                   {message.role === 'user' && (
                     <Avatar className="w-8 h-8 border">
-                      <AvatarImage src={userProfile?.profilePicture} />
+                      <AvatarImage src={userProfile?.profilePhoto} />
                       <AvatarFallback>
                         <UserIcon />
                       </AvatarFallback>

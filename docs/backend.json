@@ -1,3 +1,4 @@
+
 {
   "entities": {
     "User": {
@@ -19,9 +20,9 @@
           "type": "string",
           "description": "The user's display name."
         },
-        "profilePicture": {
+        "profilePhoto": {
           "type": "string",
-          "description": "URL of the user's profile photo.",
+          "description": "Base64 encoded string of the user's profile photo.",
           "format": "uri"
         },
         "resumeId": {

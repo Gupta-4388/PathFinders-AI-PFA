@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -10,7 +11,6 @@ import {
   LayoutGrid,
   Loader2,
   LogOut,
-  MessageSquare,
   Settings,
   TrendingUp,
   Video,
@@ -32,7 +32,7 @@ import Logo from '@/components/logo';
 import { Button } from '@/components/ui/button';
 import PageHeader from '@/components/dashboard/page-header';
 import { useToast } from '@/hooks/use-toast';
-import { useAuth, useDoc, useFirestore, useUser, errorEmitter, FirestorePermissionError } from '@/firebase';
+import { useAuth, useFirestore, useUser } from '@/firebase';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { cn } from '@/lib/utils';
 import { signOut } from 'firebase/auth';
@@ -77,13 +77,13 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           };
 
           if (!docSnap.exists()) {
-            // Document doesn't exist, initialize with Auth data
+            // Document doesn't exist, initialize with Auth data if possible
             await setDoc(userDocRef, {
               ...baseData,
-              profilePicture: user.photoURL,
+              profilePhoto: user.photoURL,
             }, { merge: true });
           } else {
-            // Document exists, only update core fields, preserve profilePicture from Firestore
+            // Document exists, only update core fields, preserve profilePhoto from Firestore
             await setDoc(userDocRef, baseData, { merge: true });
           }
         } catch (error) {

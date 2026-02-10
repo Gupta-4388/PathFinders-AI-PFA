@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
@@ -16,11 +17,10 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { File as FileIcon, Loader2, LogOut, Upload, X, AlertCircle } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useUser, useFirestore, useAuth, useStorage } from '@/firebase';
+import { useUser, useFirestore, useAuth } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import { useDoc } from '@/firebase/firestore/use-doc';
 import { setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import {
   signOut,
   EmailAuthProvider,
@@ -46,7 +46,7 @@ type UserProfile = {
   name?: string;
   email?: string;
   careerPath?: string;
-  profilePicture?: string;
+  profilePhoto?: string;
   resumeFileName?: string;
   resumeDataUri?: string;
 };
@@ -68,7 +68,6 @@ export default function SettingsPage() {
   const { user } = useUser();
   const auth = useAuth();
   const firestore = useFirestore();
-  const storage = useStorage();
 
   const userDocRef = React.useMemo(
     () => (user ? doc(firestore, 'users', user.uid) : null),
@@ -91,8 +90,8 @@ export default function SettingsPage() {
       setName(userProfile.name || user?.displayName || '');
       setEmail(userProfile.email || user?.email || '');
       setCareerPath(userProfile.careerPath || '');
-      if (userProfile.profilePicture) {
-        setAvatarImage(userProfile.profilePicture);
+      if (userProfile.profilePhoto) {
+        setAvatarImage(userProfile.profilePhoto);
       }
       if (userProfile.resumeFileName) {
         setResumeFile({ name: userProfile.resumeFileName });
@@ -263,34 +262,61 @@ export default function SettingsPage() {
 
   const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file && user && userDocRef && storage) {
-      setIsUploadingPhoto(true);
-      try {
-        const storageRef = ref(storage, `profile-photos/${user.uid}`);
-        await uploadBytes(storageRef, file);
-        const downloadURL = await getDownloadURL(storageRef);
-        
-        setAvatarImage(downloadURL);
-        setDocumentNonBlocking(
-          userDocRef,
-          { profilePicture: downloadURL },
-          { merge: true }
-        );
-        
-        toast({
-          title: 'Photo updated',
-          description: 'Your new profile photo has been saved permanently.',
-        });
-      } catch (error) {
-        console.error("Failed to upload photo", error);
+    if (file && user && userDocRef) {
+      if (!file.type.startsWith('image/')) {
         toast({
           variant: 'destructive',
-          title: 'Upload Failed',
-          description: 'Could not save your profile photo. Please try again.',
+          title: 'Invalid file type',
+          description: 'Please select an image file.',
         });
-      } finally {
-        setIsUploadingPhoto(false);
+        return;
       }
+
+      if (file.size > 500 * 1024) {
+        toast({
+          variant: 'destructive',
+          title: 'File too large',
+          description: 'Profile photo must be smaller than 500 KB.',
+        });
+        return;
+      }
+
+      setIsUploadingPhoto(true);
+      const reader = new FileReader();
+      reader.onload = async (event) => {
+        const base64 = event.target?.result as string;
+        try {
+          setAvatarImage(base64);
+          setDocumentNonBlocking(
+            userDocRef,
+            { profilePhoto: base64 },
+            { merge: true }
+          );
+          
+          toast({
+            title: 'Photo updated',
+            description: 'Your profile photo has been saved.',
+          });
+        } catch (error) {
+          console.error("Failed to save photo", error);
+          toast({
+            variant: 'destructive',
+            title: 'Update Failed',
+            description: 'Could not save your profile photo.',
+          });
+        } finally {
+          setIsUploadingPhoto(false);
+        }
+      };
+      reader.onerror = () => {
+        toast({
+          variant: 'destructive',
+          title: 'Read Error',
+          description: 'Could not read the image file.',
+        });
+        setIsUploadingPhoto(false);
+      };
+      reader.readAsDataURL(file);
     }
   };
 
@@ -366,7 +392,7 @@ export default function SettingsPage() {
                 )}
               </div>
               <Button type="button" variant="outline" onClick={handleAvatarClick} disabled={isUploadingPhoto}>
-                {isUploadingPhoto ? 'Uploading...' : 'Change photo'}
+                {isUploadingPhoto ? 'Processing...' : 'Change photo'}
               </Button>
               <input
                 type="file"
