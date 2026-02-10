@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -14,7 +13,7 @@ import {
   recommendCareerPaths,
 } from '@/ai/flows/recommend-career-paths-flow';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import ResumeAnalysis from '@/components/dashboard/resume-analysis';
 
@@ -22,6 +21,7 @@ export default function ResumePage() {
   const [analysis, setAnalysis] = useState<AnalyzeResumeOutput | null>(null);
   const [loading, setLoading] = useState(false);
   const [file, setFile] = useState<File | null>(null);
+  const [resumeDataUri, setResumeDataUri] = useState<string | null>(null);
   const { toast } = useToast();
 
   const onDrop = async (acceptedFiles: File[]) => {
@@ -34,22 +34,35 @@ export default function ResumePage() {
       });
       return;
     }
+    
+    if (uploadedFile.size > 2 * 1024 * 1024) {
+      toast({
+        variant: 'destructive',
+        title: 'File Too Large',
+        description: 'Please upload a resume smaller than 2 MB.',
+      });
+      return;
+    }
+
     setFile(uploadedFile);
+    setAnalysis(null);
+    setResumeDataUri(null);
+
     await handleAnalysis(uploadedFile);
   };
 
   const handleAnalysis = async (fileToAnalyze: File) => {
     setLoading(true);
-    setAnalysis(null);
     localStorage.removeItem('recommendedCareerPaths');
 
     const reader = new FileReader();
     reader.readAsDataURL(fileToAnalyze);
     reader.onload = async () => {
       try {
-        const resumeDataUri = reader.result as string;
+        const dataUri = reader.result as string;
+        setResumeDataUri(dataUri);
 
-        const analysisResult = await analyzeResume({ resumeDataUri });
+        const analysisResult = await analyzeResume({ resumeDataUri: dataUri });
         
         if (analysisResult.isResume) {
             setAnalysis(analysisResult);
@@ -69,7 +82,8 @@ export default function ResumePage() {
                 title: 'Invalid File',
                 description: analysisResult.rejectionReason || "The uploaded file does not appear to be a resume. Please upload a valid resume (CV)."
             });
-            setFile(null); // Clear the invalid file
+            setFile(null);
+            setResumeDataUri(null);
         }
 
       } catch (error) {
@@ -109,6 +123,7 @@ export default function ResumePage() {
   const handleRemoveFile = () => {
     setFile(null);
     setAnalysis(null);
+    setResumeDataUri(null);
   };
   
   return (
@@ -132,7 +147,7 @@ export default function ResumePage() {
               { file ? "Drop a different file or click to replace" : "Upload your resume here" }
             </p>
             <p className="text-sm text-muted-foreground mt-1">
-              (PDF, DOCX, TXT)
+              (PDF, DOCX, TXT - Max 2MB)
             </p>
           </div>
           {file && (
@@ -160,7 +175,11 @@ export default function ResumePage() {
         </div>
       )}
 
-      {analysis && !loading && <ResumeAnalysis analysis={analysis} />}
+      {analysis && !loading && (
+        <>
+          <ResumeAnalysis analysis={analysis} />
+        </>
+      )}
     </div>
   );
 }
