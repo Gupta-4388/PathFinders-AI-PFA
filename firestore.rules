@@ -17,14 +17,10 @@ service cloud.firestore {
 
     // User Profile Rules
     match /users/{userId} {
-      // Users can only read their own profile document.
-      allow get: if isOwner(userId);
-      
-      // Explicitly deny listing the users collection for security.
+      // Authenticated users can get, create, update, and delete their own document.
+      allow get, write: if request.auth != null && request.auth.uid == userId;
+      // Listing the entire user collection is disallowed for security.
       allow list: if false;
-      
-      // Users can create, update, or delete their own profile document.
-      allow write: if isOwner(userId);
     }
 
     // Subcollection Rules
