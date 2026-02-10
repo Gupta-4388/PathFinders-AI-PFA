@@ -29,6 +29,10 @@ import {
   Activity,
   User,
   Zap,
+  Info,
+  ChevronDown,
+  ChevronRight,
+  PlusCircle,
 } from 'lucide-react';
 import { useDropzone } from 'react-dropzone';
 import {
@@ -605,7 +609,7 @@ export default function InterviewPage() {
             </div>
 
             {compatibility && compatibility.isResume && (
-              <div className="space-y-4 animate-pop-in">
+              <div className="space-y-6 animate-pop-in">
                 {compatibility.parsingError ? (
                   <Alert className="border-yellow-500/50 bg-yellow-500/5">
                     <AlertTriangle className="h-4 w-4 text-yellow-500" />
@@ -633,6 +637,101 @@ export default function InterviewPage() {
                     </AlertDescription>
                   </Alert>
                 )}
+
+                <Accordion type="single" collapsible className="w-full space-y-2">
+                  <AccordionItem value="why-score" className="border rounded-lg px-4 bg-muted/20">
+                    <AccordionTrigger className="hover:no-underline font-bold text-sm">
+                      <div className="flex items-center gap-2">
+                        <Info className="w-4 h-4 text-primary" />
+                        Why this score?
+                      </div>
+                    </AccordionTrigger>
+                    <AccordionContent className="pt-2 pb-4 space-y-4">
+                      <div className="text-sm space-y-4">
+                        {compatibility.skillBreakdown ? (
+                          <>
+                            <div className="space-y-3">
+                              <h4 className="font-bold text-xs uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+                                <Target className="w-3 h-3" /> Mandatory Skills
+                              </h4>
+                              <div className="grid grid-cols-1 gap-2">
+                                {compatibility.skillBreakdown.matchedMandatory.map(s => (
+                                  <div key={s} className="flex items-center gap-2 text-green-600">
+                                    <CheckCircle2 className="w-3 h-3" /> {s}
+                                  </div>
+                                ))}
+                                {compatibility.skillBreakdown.missingMandatory.map(s => (
+                                  <div key={s} className="flex items-center gap-2 text-red-500">
+                                    <X className="w-3 h-3" /> {s}
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+
+                            <div className="space-y-3">
+                              <h4 className="font-bold text-xs uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+                                <Zap className="w-3 h-3" /> Important Skills
+                              </h4>
+                              <div className="grid grid-cols-1 gap-2">
+                                {compatibility.skillBreakdown.matchedImportant.map(s => (
+                                  <div key={s} className="flex items-center gap-2 text-green-600">
+                                    <CheckCircle2 className="w-3 h-3" /> {s}
+                                  </div>
+                                ))}
+                                {compatibility.skillBreakdown.missingImportant.map(s => (
+                                  <div key={s} className="flex items-center gap-2 text-orange-500">
+                                    <AlertTriangle className="w-3 h-3" /> {s}
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+
+                            <div className="space-y-3">
+                              <h4 className="font-bold text-xs uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+                                <PlusCircle className="w-3 h-3" /> Optional Skills
+                              </h4>
+                              <div className="flex flex-wrap gap-2">
+                                {compatibility.skillBreakdown.matchedOptional.map(s => (
+                                  <Badge key={s} variant="outline" className="text-green-600 border-green-200 bg-green-50">{s}</Badge>
+                                ))}
+                                {compatibility.skillBreakdown.missingOptional.map(s => (
+                                  <Badge key={s} variant="outline" className="text-muted-foreground">{s}</Badge>
+                                ))}
+                              </div>
+                            </div>
+                          </>
+                        ) : (
+                          <p className="text-muted-foreground italic">Detailed breakdown unavailable for this analysis.</p>
+                        )}
+                      </div>
+                    </AccordionContent>
+                  </AccordionItem>
+
+                  {compatibility.improvementSuggestions && compatibility.improvementSuggestions.length > 0 && (
+                    <AccordionItem value="improvements" className="border rounded-lg px-4 bg-primary/5">
+                      <AccordionTrigger className="hover:no-underline font-bold text-sm">
+                        <div className="flex items-center gap-2">
+                          <Lightbulb className="w-4 h-4 text-yellow-500" />
+                          Resume Improvement Suggestions
+                        </div>
+                      </AccordionTrigger>
+                      <AccordionContent className="pt-2 pb-4 space-y-4">
+                        <p className="text-xs text-muted-foreground mb-4">Focus on these missing mandatory or important skills to improve your alignment for this role:</p>
+                        <div className="space-y-4">
+                          {compatibility.improvementSuggestions.map((item, i) => (
+                            <div key={i} className="space-y-2 border-l-2 border-primary/20 pl-3">
+                              <p className="font-bold text-sm text-primary">{item.skill}</p>
+                              <p className="text-xs text-muted-foreground">{item.suggestion}</p>
+                              <div className="bg-background rounded p-2 border text-[11px] font-mono italic">
+                                &quot;{item.phrasing}&quot;
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </AccordionContent>
+                    </AccordionItem>
+                  )}
+                </Accordion>
                 
                 <div className="flex gap-3">
                    <Button onClick={proceedWithInterview} className="flex-1 font-bold" disabled={compatibility.matchScore < 40 && !compatibility.parsingError}>
