@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -112,9 +113,6 @@ export default function ResumePage() {
     onDrop,
     accept: {
       'application/pdf': ['.pdf'],
-      'application/vnd.openxmlformats-officedocument.wordprocessingml.document': [
-        '.docx',
-      ],
       'text/plain': ['.txt'],
     },
     maxFiles: 1,
@@ -147,7 +145,7 @@ export default function ResumePage() {
               { file ? "Drop a different file or click to replace" : "Upload your resume here" }
             </p>
             <p className="text-sm text-muted-foreground mt-1">
-              (PDF, DOCX, TXT - Max 2MB)
+              (PDF, TXT - Max 2MB)
             </p>
           </div>
           {file && (

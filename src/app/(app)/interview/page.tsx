@@ -138,9 +138,7 @@ export default function InterviewPage() {
     onDrop,
     accept: { 
       'application/pdf': ['.pdf'], 
-      'text/plain': ['.txt'], 
-      'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx'],
-      'application/msword': ['.doc']
+      'text/plain': ['.txt']
     },
     maxFiles: 1
   });
@@ -604,7 +602,7 @@ export default function InterviewPage() {
                 <input {...getInputProps()} />
                 <Upload className="mx-auto w-10 h-10 text-muted-foreground mb-2" />
                 <p className="font-medium">{resumeFile ? resumeFile.name : "Drag resume here or click to browse"}</p>
-                <p className="text-xs text-muted-foreground mt-1">PDF, DOCX, or TXT required</p>
+                <p className="text-xs text-muted-foreground mt-1">PDF or TXT required</p>
               </div>
             </div>
 

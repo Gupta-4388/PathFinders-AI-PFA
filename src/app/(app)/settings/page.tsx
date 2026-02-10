@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
@@ -241,8 +242,6 @@ export default function SettingsPage() {
     onDrop,
     accept: {
       'application/pdf': ['.pdf'],
-      'application/vnd.openxmlformats-officedocument.wordprocessingml.document':
-        ['.docx'],
       'text/plain': ['.txt'],
     },
     maxFiles: 1,
@@ -467,7 +466,7 @@ export default function SettingsPage() {
                 Upload your resume here
               </p>
               <p className="text-sm text-muted-foreground mt-1">
-                (PDF, DOCX, TXT)
+                (PDF, TXT)
               </p>
             </div>
           ) : (
