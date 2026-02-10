@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
@@ -325,9 +324,12 @@ export default function SettingsPage() {
   };
 
   const handleSignOut = () => {
+    if (!auth) return;
     signOut(auth)
       .then(() => {
-        localStorage.clear();
+        if (typeof window !== 'undefined') {
+          localStorage.clear();
+        }
         toast({
           title: 'Signed Out',
           description: 'You have been successfully signed out.',
@@ -470,13 +472,16 @@ export default function SettingsPage() {
             </div>
           ) : (
             <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
-              <div className="flex items-center gap-3 font-medium">
-                <FileIcon className="h-5 w-5 text-primary" />
-                <span>{resumeFile.name}</span>
+              <div className="flex items-center gap-3">
+                <FileIcon className="w-6 h-6 text-primary" />
+                <span className="font-medium truncate">{resumeFile.name}</span>
               </div>
-              <Button variant="ghost" size="icon" onClick={handleRemoveResume}>
-                <X className="h-5 w-5" />
-                <span className="sr-only">Remove resume</span>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={handleRemoveResume}
+              >
+                <X className="w-5 h-5" />
               </Button>
             </div>
           )}
