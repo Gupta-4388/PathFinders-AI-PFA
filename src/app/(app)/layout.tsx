@@ -33,7 +33,7 @@ import { Button } from '@/components/ui/button';
 import PageHeader from '@/components/dashboard/page-header';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth, useDoc, useFirestore, useUser, errorEmitter, FirestorePermissionError } from '@/firebase';
-import { doc, setDoc } from 'firebase/firestore';
+import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { cn } from '@/lib/utils';
 import { signOut } from 'firebase/auth';
 import { ThemeToggle } from '@/components/settings/theme-toggle';
@@ -65,29 +65,33 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     if (user && userDocRef) {
       const providerId = user.providerData?.[0]?.providerId;
       
-      const userData: {
-        id: string;
-        email: string | null;
-        name: string | null;
-        profilePicture: string | null;
-        signUpMethod: string;
-      } = {
-        id: user.uid,
-        email: user.email,
-        name: user.displayName,
-        profilePicture: user.photoURL,
-        signUpMethod: providerId || 'unknown',
+      const checkAndSync = async () => {
+        try {
+          const docSnap = await getDoc(userDocRef);
+          
+          const baseData = {
+            id: user.uid,
+            email: user.email,
+            name: user.displayName,
+            signUpMethod: providerId || 'unknown',
+          };
+
+          if (!docSnap.exists()) {
+            // Document doesn't exist, initialize with Auth data
+            await setDoc(userDocRef, {
+              ...baseData,
+              profilePicture: user.photoURL,
+            }, { merge: true });
+          } else {
+            // Document exists, only update core fields, preserve profilePicture from Firestore
+            await setDoc(userDocRef, baseData, { merge: true });
+          }
+        } catch (error) {
+          console.error("Layout: Failed to sync user data", error);
+        }
       };
 
-      setDoc(userDocRef, userData, { merge: true })
-        .catch((error) => {
-          const permissionError = new FirestorePermissionError({
-            path: userDocRef.path,
-            operation: 'write',
-            requestResourceData: userData,
-          });
-          errorEmitter.emit('permission-error', permissionError);
-      });
+      checkAndSync();
     }
   }, [user, userDocRef]);
 

@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
@@ -17,10 +16,11 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { File as FileIcon, Loader2, LogOut, Upload, X, AlertCircle } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useUser, useFirestore, useAuth } from '@/firebase';
+import { useUser, useFirestore, useAuth, useStorage } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import { useDoc } from '@/firebase/firestore/use-doc';
 import { setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import {
   signOut,
   EmailAuthProvider,
@@ -68,6 +68,7 @@ export default function SettingsPage() {
   const { user } = useUser();
   const auth = useAuth();
   const firestore = useFirestore();
+  const storage = useStorage();
 
   const userDocRef = React.useMemo(
     () => (user ? doc(firestore, 'users', user.uid) : null),
@@ -81,6 +82,7 @@ export default function SettingsPage() {
   const [email, setEmail] = useState('');
   const [careerPath, setCareerPath] = useState('');
   const [isValidatingResume, setIsValidatingResume] = useState(false);
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
   const [rejectionModal, setRejectionModal] = useState<{ isOpen: boolean; reason: string }>({ isOpen: false, reason: '' });
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -197,7 +199,6 @@ export default function SettingsPage() {
         try {
           const resumeDataUri = reader.result as string;
           
-          // Validate resume content before saving
           const val = await analyzeResume({ resumeDataUri });
           
           if (!val.isResume) {
@@ -260,24 +261,36 @@ export default function SettingsPage() {
     });
   };
 
-  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file && userDocRef) {
-      const reader = new FileReader();
-      reader.onload = () => {
-        const dataUri = reader.result as string;
-        setAvatarImage(dataUri);
+    if (file && user && userDocRef && storage) {
+      setIsUploadingPhoto(true);
+      try {
+        const storageRef = ref(storage, `profile-photos/${user.uid}`);
+        await uploadBytes(storageRef, file);
+        const downloadURL = await getDownloadURL(storageRef);
+        
+        setAvatarImage(downloadURL);
         setDocumentNonBlocking(
           userDocRef,
-          { profilePicture: dataUri },
+          { profilePicture: downloadURL },
           { merge: true }
         );
+        
         toast({
           title: 'Photo updated',
-          description: 'Your new profile photo has been saved.',
+          description: 'Your new profile photo has been saved permanently.',
         });
-      };
-      reader.readAsDataURL(file);
+      } catch (error) {
+        console.error("Failed to upload photo", error);
+        toast({
+          variant: 'destructive',
+          title: 'Upload Failed',
+          description: 'Could not save your profile photo. Please try again.',
+        });
+      } finally {
+        setIsUploadingPhoto(false);
+      }
     }
   };
 
@@ -339,12 +352,21 @@ export default function SettingsPage() {
         <CardContent>
           <form onSubmit={handleProfileSubmit} className="space-y-6">
             <div className="flex items-center gap-4">
-              <Avatar className="h-20 w-20">
-                <AvatarImage src={avatarImage || ''} />
-                <AvatarFallback>U</AvatarFallback>
-              </Avatar>
-              <Button type="button" variant="outline" onClick={handleAvatarClick}>
-                Change photo
+              <div className="relative group">
+                <Avatar className="h-20 w-20">
+                  <AvatarImage src={avatarImage || ''} />
+                  <AvatarFallback className="text-2xl font-bold">
+                    {name?.charAt(0) || user?.email?.charAt(0) || 'U'}
+                  </AvatarFallback>
+                </Avatar>
+                {isUploadingPhoto && (
+                  <div className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center">
+                    <Loader2 className="h-6 w-6 animate-spin text-white" />
+                  </div>
+                )}
+              </div>
+              <Button type="button" variant="outline" onClick={handleAvatarClick} disabled={isUploadingPhoto}>
+                {isUploadingPhoto ? 'Uploading...' : 'Change photo'}
               </Button>
               <input
                 type="file"
@@ -370,6 +392,8 @@ export default function SettingsPage() {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
+                  readOnly
+                  className="bg-muted cursor-not-allowed"
                 />
               </div>
               <div className="space-y-2 md:col-span-2">
