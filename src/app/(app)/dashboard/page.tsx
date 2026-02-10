@@ -11,8 +11,6 @@ import {
   Loader2,
   TrendingUp,
 } from 'lucide-react';
-import Link from 'next/link';
-
 import {
   RecommendCareerPathsOutput,
   recommendCareerPaths,
@@ -31,6 +29,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import { useDoc, useFirestore, useUser } from '@/firebase';
 import { doc } from 'firebase/firestore';
+import Link from 'next/link';
 
 type UserProfile = {
   name?: string;
@@ -56,9 +55,10 @@ export default function DashboardPage() {
 
   useEffect(() => {
     const fetchRecommendations = async () => {
-      // Avoid redundant calls and potential rate limit issues
+      // Guard: already in flight
       if (isAnalyzing.current) return;
 
+      // Safe localStorage check
       if (typeof window !== 'undefined') {
         const existingData = localStorage.getItem('recommendedCareerPaths');
         if (existingData) {
@@ -85,6 +85,9 @@ export default function DashboardPage() {
         isAnalyzing.current = true;
         setLoading(true);
         try {
+          // Immediately set this to prevent re-entry during async calls
+          lastAnalyzedUri.current = userProfile.resumeDataUri;
+
           const analysisResult = await analyzeResume({ resumeDataUri: userProfile.resumeDataUri });
 
           if (analysisResult?.isResume && analysisResult?.extractedSkills && analysisResult.extractedSkills.length > 0) {
@@ -99,20 +102,23 @@ export default function DashboardPage() {
               );
             }
             setRecommendedPaths(careerPathResult);
-            lastAnalyzedUri.current = userProfile.resumeDataUri;
           }
         } catch (error) {
-          console.error('Failed to generate career paths:', error);
+          console.error('Dashboard: Analysis loop failed:', error);
+          // Reset URI ref on error so we can retry on next profile update
+          lastAnalyzedUri.current = null;
           toast({
             variant: 'destructive',
-            title: 'Analysis Failed',
-            description: 'Could not generate career recommendations. Please try again in a moment.',
+            title: 'Analysis Paused',
+            description: 'We hit a rate limit or error. Recommendations will refresh shortly.',
           });
         } finally {
           isAnalyzing.current = false;
+          setLoading(false);
         }
+      } else {
+        setLoading(false);
       }
-      setLoading(false);
     };
 
     if (userProfile !== undefined) {

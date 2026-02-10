@@ -60,7 +60,7 @@ const recommendCareerPathsFlow = ai.defineFlow(
   },
   async (input) => {
     let attempts = 0;
-    const maxAttempts = 3;
+    const maxAttempts = 4;
     while (attempts < maxAttempts) {
       try {
         const { output } = await recommendCareerPathsPrompt(input);
@@ -68,12 +68,13 @@ const recommendCareerPathsFlow = ai.defineFlow(
       } catch (error: any) {
         attempts++;
         const isRateLimit = error?.message?.includes('429') || error?.message?.includes('Quota exceeded');
-        if (attempts >= maxAttempts || !isRateLimit) {
+        if (attempts >= maxAttempts) {
           throw error;
         }
-        await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempts) * 1000));
+        const waitTime = isRateLimit ? Math.pow(2, attempts) * 5000 : Math.pow(2, attempts) * 1000;
+        await new Promise(resolve => setTimeout(resolve, waitTime));
       }
     }
-    throw new Error('Failed to recommend career paths after multiple attempts due to rate limits.');
+    throw new Error('Career path recommendation failed after multiple attempts.');
   }
 );
