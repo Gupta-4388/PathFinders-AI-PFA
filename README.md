@@ -74,7 +74,7 @@ PathFinders AI is a comprehensive career development platform that leverages art
 
 ## 🚀 Demo
 
-> Add screenshots or a demo video link here
+https://drive.google.com/file/d/1tq51mNULzATraTUANZt-M4Zwb1mK10P0/view?usp=sharing
 
 ## 🛠️ Tech Stack
 
